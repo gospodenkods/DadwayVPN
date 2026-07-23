@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="launcher_background">#03142F</color>
+    <color name="dadway_background">#03142F</color>
+    <color name="dadway_surface">#0B2A59</color>
+    <color name="dadway_primary">#2BB9FF</color>
+    <color name="dadway_primary_dark">#0874E8</color>
+    <color name="dadway_danger">#FF4141</color>
+    <color name="dadway_success">#39E85B</color>
+    <color name="dadway_warning">#FFBE2D</color>
+    <color name="dadway_text">#F5F8FF</color>
+    <color name="dadway_text_secondary">#A9BED8</color>
+    <!-- Совместимые имена для XML-ресурсов полного UI-набора -->
+    <color name="blue_primary">#0874E8</color>
+    <color name="blue_light">#2BB9FF</color>
+    <color name="card_stroke">#335F8F</color>
+    <color name="red_primary">#FF4141</color>
+    <color name="yellow_accent">#FFBE2D</color>
+    <color name="success">#39E85B</color>
+    <color name="muted">#7E94AE</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

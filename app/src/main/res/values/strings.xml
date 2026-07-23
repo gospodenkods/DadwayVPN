@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dadway VPN</string>
+    <string name="connect">Подключить</string>
+    <string name="disconnect">Отключить</string>
+    <string name="connected">Подключено</string>
+    <string name="disconnected">Отключено</string>
+    <string name="connecting">Подключение</string>
+    <string name="status">Состояние VPN</string>
+    <string name="secure_connection">Защищённое VPN-соединение</string>
+    <string name="website">dadway.ru</string>
+    <string name="website_upper">DADWAY.RU</string>
+    <string name="telegram_channel">Telegram: @gds_technical</string>
+    <string name="telegram_channel_multiline">TELEGRAM:
+@GDS_TECHNICAL</string>
+    <string name="connection_profile">КОНФИГУРАЦИЯ ПОДКЛЮЧЕНИЯ</string>
+</resources>

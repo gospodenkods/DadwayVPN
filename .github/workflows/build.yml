@@ -1,0 +1,73 @@
+name: Build Dadway VPN v7.3.3 APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          check-latest: true
+          cache: false
+      - uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r29
+          add-to-path: true
+      - name: Configure Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;36.0.0" "platform-tools"
+      - name: Build VPN core
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch v26.7.11 https://github.com/XTLS/libXray.git .ci-libxray
+          cd .ci-libxray
+          python3 build/main.py android 2>&1 | tee ../libxray-build.log
+          test -f libXray.aar
+          mkdir -p ../app/libs
+          cp libXray.aar ../app/libs/libXray.aar
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "8.10.2"
+      - name: Build debug APK
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle --no-daemon clean assembleDebug --stacktrace 2>&1 | tee build.log
+      - name: Collect APK
+        if: success()
+        run: |
+          mkdir -p output
+          cp app/build/outputs/apk/debug/app-debug.apk output/DadwayVPN-v7.3.3-debug.apk
+          sha256sum output/DadwayVPN-v7.3.3-debug.apk > output/DadwayVPN-v7.3.3-debug.apk.sha256
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DadwayVPN-v7.3.3-apk
+          path: output/
+          retention-days: 30
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DadwayVPN-v7.3.3-build-logs
+          path: |
+            build.log
+            libxray-build.log
+          if-no-files-found: warn
+          retention-days: 14
