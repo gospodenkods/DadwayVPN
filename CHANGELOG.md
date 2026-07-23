@@ -1,6 +1,6 @@
 # Changelog
 
-## 7.5.0 Debug
+## 7.5.1 Debug
 
 - Объединены исправления версий 7.3.1–7.3.3.
 - Исправлена клиентская REALITY-конфигурация: используется `realitySettings.serverName`; серверное поле `serverNames` удаляется из outbound.

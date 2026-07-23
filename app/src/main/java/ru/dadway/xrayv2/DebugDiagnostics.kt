@@ -14,7 +14,7 @@ object DebugDiagnostics {
 
     fun captureBase(context: Context, base: JSONObject, sourceLink: String?) {
         write(context, BASE_RAW, base.toString(2))
-        write(context, BASE_SAFE, redact(base).toString(2))
+        write(context, BASE_SAFE, prettyJson(redact(base)))
         LogStore.add(context, "DEBUG 7.5: конвертер вернул JSON (${base.toString().length} символов)")
         LogStore.add(context, "DEBUG 7.5: исходная ссылка: ${describeLink(sourceLink)}")
         logRealitySummary(context, "после конвертера", base)
@@ -24,10 +24,10 @@ object DebugDiagnostics {
         val json = JSONObject(finalJson)
         write(context, FINAL_RAW, json.toString(2))
         val safe = redact(json)
-        write(context, FINAL_SAFE, safe.toString(2))
+        write(context, FINAL_SAFE, prettyJson(safe))
         LogStore.add(context, "DEBUG 7.5: итоговый JSON сохранён во внутреннее хранилище (${finalJson.length} символов)")
         logRealitySummary(context, "перед runXrayFromJson", json)
-        LogStore.add(context, "DEBUG 7.5: итоговый JSON с удалёнными секретами:\n${safe.toString(2)}")
+        LogStore.add(context, "DEBUG 7.5: итоговый JSON с удалёнными секретами:\n${prettyJson(safe)}")
     }
 
     fun exportText(context: Context): String = buildString {
@@ -107,6 +107,13 @@ object DebugDiagnostics {
         null, JSONObject.NULL -> JSONObject.NULL
         is JSONArray -> JSONArray().also { target -> repeat(value.length()) { target.put("<redacted>") } }
         else -> "<redacted>"
+    }
+
+    private fun prettyJson(value: Any?): String = when (value) {
+        is JSONObject -> value.toString(2)
+        is JSONArray -> value.toString(2)
+        null, JSONObject.NULL -> "null"
+        else -> value.toString()
     }
 
     private fun write(context: Context, name: String, text: String) {

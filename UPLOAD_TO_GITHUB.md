@@ -1,4 +1,4 @@
-# Загрузка Dadway VPN v7.5.0-Debug в GitHub
+# Загрузка Dadway VPN v7.5.1-Debug в GitHub
 
 Рекомендуемый способ — работать с уже клонированным репозиторием, чтобы не создавать несвязанную историю Git.
 
@@ -8,13 +8,13 @@
 git clone https://github.com/gospodenkods/DadwayVPN.git D:\git\DadwayVPN
 ```
 
-Скопируйте в `D:\git\DadwayVPN` всё содержимое папки версии 7.5.0 Debug с заменой файлов, но не удаляйте папку `.git`. Затем:
+Скопируйте в `D:\git\DadwayVPN` всё содержимое папки версии 7.5.1 Debug с заменой файлов, но не удаляйте папку `.git`. Затем:
 
 ```powershell
 cd D:\git\DadwayVPN
 git status
 git add --all
-git commit -m "Dadway VPN v7.5.0-Debug"
+git commit -m "Dadway VPN v7.5.1-Debug"
 git push origin main
 ```
 
@@ -23,11 +23,11 @@ git push origin main
 Используйте только когда нужно заменить репозиторий содержимым распакованного архива:
 
 ```powershell
-cd D:\git\DadwayVPN-v7.5.0-Debug
+cd D:\git\DadwayVPN-v7.5.1-Debug
 git init
 git remote add origin https://github.com/gospodenkods/DadwayVPN.git
 git add --all
-git commit -m "Dadway VPN v7.5.0-Debug"
+git commit -m "Dadway VPN v7.5.1-Debug"
 git branch -M main
 git fetch origin
 git push -u origin main --force-with-lease
@@ -42,4 +42,4 @@ git fetch origin
 git push -u origin main --force-with-lease
 ```
 
-После загрузки откройте **GitHub → Actions → Build Dadway VPN v7.5.0-Debug APK**. Скачайте артефакт `DadwayVPN-v7.5.0-Debug-apk`.
+После загрузки откройте **GitHub → Actions → Build Dadway VPN v7.5.1-Debug APK**. Скачайте артефакт `DadwayVPN-v7.5.1-Debug-apk`.
