@@ -10,19 +10,25 @@ object XrayConfigBuilder {
     const val SOCKS_PORT = 10808
     const val METRICS_PORT = 49227
 
-    data class Built(val json: String, val server: String)
+    data class Built(val json: String, val server: String, val protocol: String)
 
     fun build(base: JSONObject, tunFd: Int, filesDir: String, sourceLink: String? = null): Built {
         val outbounds = base.optJSONArray("outbounds") ?: JSONArray().also { base.put("outbounds", it) }
         normalizeConvertedOutbounds(outbounds)
-        sourceLink?.takeIf { it.startsWith("vless://", ignoreCase = true) }?.let { applyShareLinkHints(outbounds, it) }
-        normalizeRealityServerNames(outbounds)
+
         val proxy = findProxyOutbound(outbounds) ?: error("В подписке нет outbound-конфигурации")
+        sourceLink
+            ?.takeIf { it.startsWith("vless://", ignoreCase = true) }
+            ?.let { applyShareLinkHints(proxy, it) }
+
+        normalizeRealityClientSettings(outbounds)
+        validateProxyOutbound(proxy)
+
         val proxyTag = proxy.optString("tag").ifBlank { "proxy" }.also { proxy.put("tag", it) }
         ensureOutbound(outbounds, "direct", "freedom")
         ensureOutbound(outbounds, "block", "blackhole")
 
-        val inbounds = JSONArray()
+        base.put("inbounds", JSONArray()
             .put(JSONObject()
                 .put("tag", "tun-in")
                 .put("protocol", "tun")
@@ -33,26 +39,25 @@ object XrayConfigBuilder {
                 .put("listen", "127.0.0.1")
                 .put("port", SOCKS_PORT)
                 .put("protocol", "socks")
-                .put("settings", JSONObject().put("udp", true)))
-        base.put("inbounds", inbounds)
+                .put("settings", JSONObject().put("udp", true))))
 
         base.put("env", JSONObject()
             .put("xray.tun.fd", tunFd.toString())
             .put("xray.location.asset", filesDir)
             .put("xray.location.cert", filesDir))
 
-        base.put("dns", JSONObject()
-            .put("servers", JSONArray()
-                .put("1.1.1.1")
-                .put("8.8.8.8")))
+        base.put("dns", JSONObject().put("servers", JSONArray().put("1.1.1.1").put("8.8.8.8")))
 
         base.put("routing", JSONObject()
             .put("domainStrategy", "IPIfNonMatch")
             .put("rules", JSONArray()
-                .put(JSONObject().put("type", "field").put("inboundTag", JSONArray().put("tun-in").put("socks-in"))
+                .put(JSONObject()
+                    .put("type", "field")
+                    .put("inboundTag", JSONArray().put("tun-in").put("socks-in"))
                     .put("domain", JSONArray().put("domain:ru").put("domain:by").put("domain:su"))
                     .put("outboundTag", "direct"))
-                .put(JSONObject().put("type", "field")
+                .put(JSONObject()
+                    .put("type", "field")
                     .put("ip", JSONArray()
                         .put("10.0.0.0/8")
                         .put("100.64.0.0/10")
@@ -67,29 +72,31 @@ object XrayConfigBuilder {
                         .put("fe80::/10")
                         .put("ff00::/8"))
                     .put("outboundTag", "direct"))
-                .put(JSONObject().put("type", "field").put("inboundTag", JSONArray().put("tun-in").put("socks-in")).put("outboundTag", proxyTag))))
+                .put(JSONObject()
+                    .put("type", "field")
+                    .put("inboundTag", JSONArray().put("tun-in").put("socks-in"))
+                    .put("outboundTag", proxyTag))))
 
         base.put("metrics", JSONObject().put("listen", "127.0.0.1:$METRICS_PORT"))
         base.put("stats", JSONObject())
         base.put("policy", JSONObject().put("system", JSONObject()
-            .put("statsInboundDownlink", true).put("statsInboundUplink", true)
-            .put("statsOutboundDownlink", true).put("statsOutboundUplink", true)))
+            .put("statsInboundDownlink", true)
+            .put("statsInboundUplink", true)
+            .put("statsOutboundDownlink", true)
+            .put("statsOutboundUplink", true)))
         base.put("log", JSONObject().put("loglevel", "warning"))
 
-        return Built(base.toString(), extractServer(proxy))
+        return Built(
+            json = base.toString(),
+            server = extractServer(proxy),
+            protocol = proxy.optString("protocol", "unknown")
+        )
     }
 
-
-    /**
-     * Some libXray builds do not copy all REALITY/XHTTP query parameters from
-     * a VLESS share link. Restore the runtime-critical values directly from
-     * the original link before Xray validates the JSON configuration.
-     */
-    private fun applyShareLinkHints(outbounds: JSONArray, link: String) {
-        val proxy = findProxyOutbound(outbounds) ?: return
+    /** Restore parameters that some libXray converters omit from VLESS links. */
+    private fun applyShareLinkHints(proxy: JSONObject, link: String) {
         val params = parseQuery(link)
-        val security = params["security"].orEmpty()
-        if (!security.equals("reality", ignoreCase = true)) return
+        if (!params.value("security").equals("reality", ignoreCase = true)) return
 
         val stream = proxy.optJSONObject("streamSettings")
             ?: JSONObject().also { proxy.put("streamSettings", it) }
@@ -97,44 +104,38 @@ object XrayConfigBuilder {
 
         val reality = stream.optJSONObject("realitySettings")
             ?: JSONObject().also { stream.put("realitySettings", it) }
+
         val sni = sequenceOf(
-            params["sni"],
-            params["serverName"],
-            reality.optString("serverName").takeIf { it.isNotBlank() }
-        ).filterNotNull().map { it.trim() }.firstOrNull { it.isNotEmpty() }
+            params.value("sni"),
+            params.value("serverName"),
+            reality.optString("serverName").trim().takeIf { it.isNotEmpty() }
+        ).filterNotNull().firstOrNull { it.isNotBlank() }
             ?: error("В конфигурации REALITY отсутствует SNI/serverName")
-        // Different Xray/libXray generations accept different client-side
-        // spellings. Keep both forms populated and never leave an empty array.
-        reality.put("serverName", sni)
-        reality.put("serverNames", JSONArray().put(sni))
 
-        params["fp"]?.takeIf { it.isNotBlank() }?.let { reality.put("fingerprint", it) }
-        params["pbk"]?.takeIf { it.isNotBlank() }?.let { reality.put("publicKey", it) }
-        params["sid"]?.let { reality.put("shortId", it) }
-        params["spx"]?.takeIf { it.isNotBlank() }?.let { reality.put("spiderX", it) }
-        params["pqv"]?.takeIf { it.isNotBlank() }?.let {
-            // Current Xray/libXray builds may use either key.
-            reality.put("mldsa65Verify", it)
-        }
+        // Client-side REALITY uses singular serverName. serverNames is a
+        // server-side option and must not be sent by an outbound client.
+        reality.put("serverName", sni.trim())
+        reality.remove("serverNames")
+        reality.remove("server_name")
 
-        if (params["type"].equals("xhttp", ignoreCase = true)) {
+        params.value("fp")?.takeIf { it.isNotBlank() }?.let { reality.put("fingerprint", it) }
+        params.value("pbk")?.takeIf { it.isNotBlank() }?.let { reality.put("publicKey", it) }
+        params.value("sid")?.let { reality.put("shortId", it) }
+        params.value("spx")?.takeIf { it.isNotBlank() }?.let { reality.put("spiderX", it) }
+        params.value("pqv")?.takeIf { it.isNotBlank() }?.let { reality.put("mldsa65Verify", it) }
+
+        if (params.value("type").equals("xhttp", ignoreCase = true)) {
             stream.put("network", "xhttp")
             val xhttp = stream.optJSONObject("xhttpSettings")
                 ?: JSONObject().also { stream.put("xhttpSettings", it) }
-            xhttp.put("path", params["path"].orEmpty().ifBlank { "/" })
-            params["mode"]?.takeIf { it.isNotBlank() }?.let { xhttp.put("mode", it) }
-            params["host"]?.takeIf { it.isNotBlank() }?.let { xhttp.put("host", it) }
+            xhttp.put("path", params.value("path").orEmpty().ifBlank { "/" })
+            params.value("mode")?.takeIf { it.isNotBlank() }?.let { xhttp.put("mode", it) }
+            params.value("host")?.takeIf { it.isNotBlank() }?.let { xhttp.put("host", it) }
         }
     }
 
-
-    /**
-     * libXray 26.x may emit an empty `serverNames` array even when
-     * `serverName` is present. Xray then validates the empty array first and
-     * aborts with `empty "serverNames"`. Synchronise both representations for
-     * every REALITY outbound before the config is handed to Xray-core.
-     */
-    private fun normalizeRealityServerNames(outbounds: JSONArray) {
+    /** Convert accidental server-side REALITY fields to the client schema. */
+    private fun normalizeRealityClientSettings(outbounds: JSONArray) {
         for (i in 0 until outbounds.length()) {
             val outbound = outbounds.optJSONObject(i) ?: continue
             val stream = outbound.optJSONObject("streamSettings") ?: continue
@@ -142,13 +143,11 @@ object XrayConfigBuilder {
 
             val reality = stream.optJSONObject("realitySettings")
                 ?: JSONObject().also { stream.put("realitySettings", it) }
-            val fromArray = reality.optJSONArray("serverNames")
-                ?.let { names ->
-                    (0 until names.length())
-                        .asSequence()
-                        .map { names.optString(it).trim() }
-                        .firstOrNull { it.isNotEmpty() }
-                }
+            val fromArray = reality.optJSONArray("serverNames")?.let { names ->
+                (0 until names.length()).asSequence()
+                    .map { names.optString(it).trim() }
+                    .firstOrNull { it.isNotEmpty() }
+            }
             val sni = sequenceOf(
                 reality.optString("serverName").trim(),
                 reality.optString("server_name").trim(),
@@ -157,8 +156,25 @@ object XrayConfigBuilder {
                 ?: error("В конфигурации REALITY отсутствует SNI/serverName")
 
             reality.put("serverName", sni)
-            reality.put("serverNames", JSONArray().put(sni))
+            reality.remove("serverNames")
             reality.remove("server_name")
+        }
+    }
+
+    private fun validateProxyOutbound(proxy: JSONObject) {
+        val protocol = proxy.optString("protocol").trim()
+        require(protocol.isNotEmpty()) { "У proxy-outbound отсутствует protocol" }
+
+        val stream = proxy.optJSONObject("streamSettings") ?: return
+        if (!stream.optString("security").equals("reality", ignoreCase = true)) return
+
+        val reality = stream.optJSONObject("realitySettings")
+            ?: error("У REALITY отсутствует realitySettings")
+        require(reality.optString("serverName").isNotBlank()) {
+            "У REALITY отсутствует serverName"
+        }
+        require(reality.optString("publicKey").isNotBlank()) {
+            "У REALITY отсутствует publicKey/pbk"
         }
     }
 
@@ -166,11 +182,11 @@ object XrayConfigBuilder {
         for (i in 0 until outbounds.length()) {
             val outbound = outbounds.optJSONObject(i) ?: continue
             val protocol = outbound.optString("protocol")
-            if (!protocol.equals("freedom", true) && !protocol.equals("blackhole", true)) {
+            if (!protocol.equals("freedom", true) && !protocol.equals("blackhole", true) && protocol.isNotBlank()) {
                 return outbound
             }
         }
-        return outbounds.optJSONObject(0)
+        return null
     }
 
     private fun parseQuery(link: String): Map<String, String> {
@@ -178,20 +194,18 @@ object XrayConfigBuilder {
         if (raw.isBlank()) return emptyMap()
         return raw.split('&').mapNotNull { item ->
             val parts = item.split('=', limit = 2)
-            val key = decode(parts[0])
+            val key = decode(parts[0]).trim()
             if (key.isBlank()) null else key to decode(parts.getOrElse(1) { "" })
         }.toMap()
     }
 
+    private fun Map<String, String>.value(key: String): String? =
+        entries.firstOrNull { it.key.equals(key, ignoreCase = true) }?.value
+
     private fun decode(value: String): String =
         URLDecoder.decode(value, StandardCharsets.UTF_8.name())
 
-    /**
-     * libXray uses sendThrough as temporary storage for the profile name when
-     * converting share links. Xray-core itself interprets sendThrough as a
-     * local source IP/interface. A profile name such as "server-app" is not a
-     * valid source address, so it must not reach the runtime configuration.
-     */
+    /** Remove profile names accidentally written to sendThrough by converters. */
     private fun normalizeConvertedOutbounds(outbounds: JSONArray) {
         for (i in 0 until outbounds.length()) {
             val outbound = outbounds.optJSONObject(i) ?: continue

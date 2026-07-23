@@ -15,7 +15,7 @@ object SubscriptionClient {
             requestMethod = "GET"
             instanceFollowRedirects = true
             setRequestProperty("Accept", "text/plain, */*")
-            setRequestProperty("User-Agent", "DadwayVPN/7.3.3 Android")
+            setRequestProperty("User-Agent", "DadwayVPN/7.4.0 Android")
         }
 
         try {

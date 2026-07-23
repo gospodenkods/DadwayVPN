@@ -67,7 +67,7 @@ class DadwayVpnService : VpnService() {
                     filesDir = filesDir.absolutePath,
                     sourceLink = sourceLink
                 )
-                LogStore.add(this@DadwayVpnService, "Запуск VPN, сервер ${built.server}")
+                LogStore.add(this@DadwayVpnService, "Запуск VPN: профиль=${activeProfile.title}, протокол=${built.protocol}, сервер=${built.server}")
                 XrayBridge.run(built.json)
 
                 AppState.update { it.copy(running = true, status = "Подключено", server = built.server) }

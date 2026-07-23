@@ -1,22 +1,45 @@
-# Загрузка Dadway VPN v7.3.3 в GitHub
+# Загрузка Dadway VPN v7.4.0 в GitHub
 
-1. Создайте на GitHub пустой **Private** репозиторий `DadwayVPN`.
-2. Распакуйте архив, например в `D:\git\DadwayVPN-v7.3.3`.
-3. Откройте PowerShell в каталоге проекта.
-4. Снимите блокировку скачанного сценария:
+Рекомендуемый способ — работать с уже клонированным репозиторием, чтобы не создавать несвязанную историю Git.
 
-```powershell
-Unblock-File .\upload-to-github.ps1
-```
-
-5. Запустите загрузку:
+## Обновление существующего репозитория
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File .\upload-to-github.ps1 `
-  -RepositoryUrl "https://github.com/gospodenkods/DadwayVPN.git"
+git clone https://github.com/gospodenkods/DadwayVPN.git D:\git\DadwayVPN
 ```
 
-Версия 2.2 не использует `git rev-parse --verify HEAD` и другие проверочные команды, возвращающие код 1. Поэтому сценарий совместим с Windows PowerShell 5.1 и корректно работает в новом репозитории без первого commit.
+Скопируйте в `D:\git\DadwayVPN` всё содержимое папки версии 7.4.0 с заменой файлов, но не удаляйте папку `.git`. Затем:
 
-После отправки откройте **GitHub → Actions → Build Dadway VPN v7.3.3 APK**. После успешной сборки скачайте артефакт `DadwayVPN-v7.3.3-apk`. При ошибке скачайте `DadwayVPN-v7.3.3-build-logs`.
+```powershell
+cd D:\git\DadwayVPN
+git status
+git add --all
+git commit -m "Dadway VPN v7.4.0"
+git push origin main
+```
+
+## Полная замена ветки main
+
+Используйте только когда нужно заменить репозиторий содержимым распакованного архива:
+
+```powershell
+cd D:\git\DadwayVPN-v7.4.0
+git init
+git remote add origin https://github.com/gospodenkods/DadwayVPN.git
+git add --all
+git commit -m "Dadway VPN v7.4.0"
+git branch -M main
+git fetch origin
+git push -u origin main --force-with-lease
+```
+
+Если до этого выполнялся `git pull --allow-unrelated-histories` и возникли конфликты:
+
+```powershell
+git merge --abort
+git reset --hard HEAD
+git fetch origin
+git push -u origin main --force-with-lease
+```
+
+После загрузки откройте **GitHub → Actions → Build Dadway VPN v7.4.0 APK**. Скачайте артефакт `DadwayVPN-v7.4.0-apk`.
