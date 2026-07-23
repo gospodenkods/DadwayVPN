@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
     }
     private val saveLog = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         if (uri != null) runCatching {
-            contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer -> writer.write(DebugDiagnostics.exportText(this)) }
+            contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer -> writer.write("Dadway VPN 8.0 log export\n\n" + LogStore.read(this)) }
         }.onSuccess { toast("Лог сохранён") }.onFailure { toast("Ошибка: ${it.message}") }
     }
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -72,7 +72,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.testButton).setOnClickListener { testConnection() }
         findViewById<MaterialButton>(R.id.ipButton).setOnClickListener { testConnection() }
         findViewById<MaterialButton>(R.id.saveLogsButton).setOnClickListener {
-            saveLog.launch("dadway-vpn-7.5-debug-${System.currentTimeMillis()}.txt")
+            saveLog.launch("dadway-vpn-8.0-${System.currentTimeMillis()}.txt")
         }
         findViewById<MaterialButton>(R.id.settingsButton).setOnClickListener { showSettings() }
 
