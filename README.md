@@ -1,4 +1,4 @@
-# Dadway VPN v8.0.0
+# Dadway VPN v8.0.1
 
 Стабильная версия Android-клиента Dadway VPN на базе libXray.
 
@@ -18,11 +18,11 @@
 
 ## Версия
 
-- `versionCode`: 100
-- `versionName`: 8.0.0
+- `versionCode`: 101
+- `versionName`: 8.0.1
 
 ## Сборка
 
-После push в ветку `main` GitHub Actions собирает APK и публикует артефакт `DadwayVPN-v8.0.0-apk`.
+После push в ветку `main` GitHub Actions собирает APK и публикует артефакт `DadwayVPN-v8.0.1-apk`.
 
 Инструкция по загрузке находится в `UPLOAD_TO_GITHUB.md`.

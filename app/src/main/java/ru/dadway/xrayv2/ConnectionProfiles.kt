@@ -26,7 +26,7 @@ object ConnectionProfiles {
     const val SABINA_ID = RESERVE_ID
 
     private const val PRIMARY_SUBSCRIPTION_URL =
-        "http://promo.dadway.ru:2096/sub/tnt9ztgjgvizzclm"
+        "https://promo.dadway.ru/sub/tnt9ztgjgvizzclm"
     private const val RESERVE_SUBSCRIPTION_URL =
         "https://zpp.div3.ru:2096/sub/m315s5c3qc51hkoj"
 
