@@ -134,31 +134,45 @@ object XrayConfigBuilder {
         }
     }
 
-    /** Convert accidental server-side REALITY fields to the client schema. */
+    /** Rebuild REALITY outbound settings using only client-side fields. */
     private fun normalizeRealityClientSettings(outbounds: JSONArray) {
         for (i in 0 until outbounds.length()) {
             val outbound = outbounds.optJSONObject(i) ?: continue
             val stream = outbound.optJSONObject("streamSettings") ?: continue
             if (!stream.optString("security").equals("reality", ignoreCase = true)) continue
 
-            val reality = stream.optJSONObject("realitySettings")
-                ?: JSONObject().also { stream.put("realitySettings", it) }
-            val fromArray = reality.optJSONArray("serverNames")?.let { names ->
+            val source = stream.optJSONObject("realitySettings") ?: JSONObject()
+            val fromArray = source.optJSONArray("serverNames")?.let { names ->
                 (0 until names.length()).asSequence()
                     .map { names.optString(it).trim() }
                     .firstOrNull { it.isNotEmpty() }
             }
             val sni = sequenceOf(
-                reality.optString("serverName").trim(),
-                reality.optString("server_name").trim(),
+                source.optString("serverName").trim(),
+                source.optString("server_name").trim(),
                 fromArray.orEmpty()
             ).firstOrNull { it.isNotEmpty() }
                 ?: error("В конфигурации REALITY отсутствует SNI/serverName")
 
-            reality.put("serverName", sni)
-            reality.remove("serverNames")
-            reality.remove("server_name")
+            // Do not mutate the converter result in place: libXray may include
+            // server-only fields (privateKey, serverNames, shortIds, dest, etc.).
+            // Their presence makes Xray parse an outbound as a REALITY server.
+            val client = JSONObject()
+                .put("serverName", sni)
+
+            copyNonBlank(source, client, "fingerprint")
+            copyNonBlank(source, client, "publicKey")
+            copyNonBlank(source, client, "shortId")
+            copyNonBlank(source, client, "spiderX")
+            copyNonBlank(source, client, "mldsa65Verify")
+
+            stream.put("realitySettings", client)
         }
+    }
+
+    private fun copyNonBlank(source: JSONObject, target: JSONObject, key: String) {
+        val value = source.optString(key).trim()
+        if (value.isNotEmpty()) target.put(key, value)
     }
 
     private fun validateProxyOutbound(proxy: JSONObject) {
