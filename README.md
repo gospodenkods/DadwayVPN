@@ -1,4 +1,4 @@
-# Dadway VPN v7.4.0
+# Dadway VPN v7.5.0 Debug
 
 Android-клиент Dadway VPN на базе libXray с двумя профилями подписки и автоматическим резервированием.
 
@@ -15,11 +15,11 @@ Android-клиент Dadway VPN на базе libXray с двумя профил
 
 ## Версия
 
-- `versionCode`: 80
-- `versionName`: 7.4.0
+- `versionCode`: 90
+- `versionName`: 7.5.0 Debug
 
 ## Сборка
 
-При push в ветку `main` GitHub Actions собирает debug APK и публикует артефакт `DadwayVPN-v7.4.0-apk`.
+При push в ветку `main` GitHub Actions собирает debug APK и публикует артефакт `DadwayVPN-v7.5.0 Debug-apk`.
 
 Инструкция по загрузке находится в `UPLOAD_TO_GITHUB.md`.

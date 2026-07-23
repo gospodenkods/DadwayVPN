@@ -61,6 +61,7 @@ class DadwayVpnService : VpnService() {
 
                 val sourceLink = ConnectionProfiles.firstShareLink(links)
                 val base = XrayBridge.linksToConfig(links)
+                DebugDiagnostics.captureBase(this@DadwayVpnService, base, sourceLink)
                 val built = XrayConfigBuilder.build(
                     base = base,
                     tunFd = tun!!.fd,
@@ -68,6 +69,7 @@ class DadwayVpnService : VpnService() {
                     sourceLink = sourceLink
                 )
                 LogStore.add(this@DadwayVpnService, "Запуск VPN: профиль=${activeProfile.title}, протокол=${built.protocol}, сервер=${built.server}")
+                DebugDiagnostics.captureFinal(this@DadwayVpnService, built.json)
                 XrayBridge.run(built.json)
 
                 AppState.update { it.copy(running = true, status = "Подключено", server = built.server) }
