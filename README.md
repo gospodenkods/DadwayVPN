@@ -1,10 +1,10 @@
-# Dadway VPN v8.0.1
+# Dadway VPN v8.1.0
 
 Стабильная версия Android-клиента Dadway VPN на базе libXray.
 
 ## Возможности
 
-- профили «Основной сервер» и «Резервный сервер»;
+- три профиля: «Россия», «USA» и «Netherlands»;
 - отдельный кэш для каждой подписки;
 - автоматическое переключение на резервную подписку, если основная недоступна;
 - VLESS, VMess, Trojan и Shadowsocks через libXray;
@@ -19,10 +19,10 @@
 ## Версия
 
 - `versionCode`: 101
-- `versionName`: 8.0.1
+- `versionName`: 8.1.0
 
 ## Сборка
 
-После push в ветку `main` GitHub Actions собирает APK и публикует артефакт `DadwayVPN-v8.0.1-apk`.
+После push в ветку `main` GitHub Actions собирает APK и публикует артефакт `DadwayVPN-v8.1.0-apk`.
 
 Инструкция по загрузке находится в `UPLOAD_TO_GITHUB.md`.

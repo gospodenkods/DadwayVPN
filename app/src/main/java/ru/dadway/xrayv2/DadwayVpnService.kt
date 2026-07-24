@@ -44,7 +44,7 @@ class DadwayVpnService : VpnService() {
                     activeProfile = ConnectionProfiles.byId(ConnectionProfiles.SABINA_ID)
                     LogStore.add(
                         this@DadwayVpnService,
-                        "Основной сервер недоступен (${primaryError.message}). Автоматическое переключение на резервный сервер"
+                        "Сервер Россия недоступен (${primaryError.message}). Автоматическое переключение на USA"
                     )
                     ConnectionProfiles.connectionText(this@DadwayVpnService, activeProfile)
                 }

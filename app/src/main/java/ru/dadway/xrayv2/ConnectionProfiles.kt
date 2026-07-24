@@ -22,6 +22,7 @@ object ConnectionProfiles {
 
     const val DEFAULT_ID = "dadway_subscription"
     const val RESERVE_ID = "reserve_subscription"
+    const val NETHERLANDS_ID = "netherlands_subscription"
     // Kept as an alias so existing service code and saved installations remain compatible.
     const val SABINA_ID = RESERVE_ID
 
@@ -29,11 +30,13 @@ object ConnectionProfiles {
         "https://promo.dadway.ru/sub/tnt9ztgjgvizzclm"
     private const val RESERVE_SUBSCRIPTION_URL =
         "https://zpp.div3.ru:2096/sub/m315s5c3qc51hkoj"
+    private const val NETHERLANDS_SUBSCRIPTION_URL =
+        "http://mikrot.icu:2096/sub/hqx2y9f5rar310zd"
 
     val all: List<ConnectionProfile> = listOf(
         ConnectionProfile(
             DEFAULT_ID,
-            "Основной сервер",
+            "Россия",
             ConnectionProfile.Source.Subscription(
                 url = PRIMARY_SUBSCRIPTION_URL,
                 cacheKey = "primary_subscription_text"
@@ -41,10 +44,18 @@ object ConnectionProfiles {
         ),
         ConnectionProfile(
             RESERVE_ID,
-            "Резервный сервер",
+            "USA",
             ConnectionProfile.Source.Subscription(
                 url = RESERVE_SUBSCRIPTION_URL,
                 cacheKey = "reserve_subscription_text"
+            )
+        ),
+        ConnectionProfile(
+            NETHERLANDS_ID,
+            "Netherlands",
+            ConnectionProfile.Source.Subscription(
+                url = NETHERLANDS_SUBSCRIPTION_URL,
+                cacheKey = "netherlands_subscription_text"
             )
         )
     )
