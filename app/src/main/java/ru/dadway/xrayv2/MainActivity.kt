@@ -8,9 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.Spinner
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,7 +30,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var total: TextView
     private lateinit var connect: ImageButton
     private lateinit var statusIcon: ImageView
-    private lateinit var profileSpinner: Spinner
+    private lateinit var profileRussia: View
+    private lateinit var profileUsa: View
+    private lateinit var profileNetherlands: View
+    private lateinit var connectCaption: TextView
     private val listener: (UiState) -> Unit = { runOnUiThread { render(it) } }
 
     private val vpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -40,7 +41,7 @@ class MainActivity : AppCompatActivity() {
     }
     private val saveLog = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         if (uri != null) runCatching {
-            contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer -> writer.write("Dadway VPN 8.0 log export\n\n" + LogStore.read(this)) }
+            contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer -> writer.write("Dadway VPN 8.2 log export\n\n" + LogStore.read(this)) }
         }.onSuccess { toast("Лог сохранён") }.onFailure { toast("Ошибка: ${it.message}") }
     }
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -57,8 +58,11 @@ class MainActivity : AppCompatActivity() {
         total = findViewById(R.id.totalText)
         connect = findViewById(R.id.connectButton)
         statusIcon = findViewById(R.id.statusIcon)
-        profileSpinner = findViewById(R.id.profileSpinner)
-        setupProfileSpinner()
+        profileRussia = findViewById(R.id.profileRussia)
+        profileUsa = findViewById(R.id.profileUsa)
+        profileNetherlands = findViewById(R.id.profileNetherlands)
+        connectCaption = findViewById(R.id.connectCaption)
+        setupProfileCards()
 
         findViewById<TextView>(R.id.websiteLink).setOnClickListener {
             openExternal("https://dadway.ru")
@@ -72,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.testButton).setOnClickListener { testConnection() }
         findViewById<MaterialButton>(R.id.ipButton).setOnClickListener { testConnection() }
         findViewById<MaterialButton>(R.id.saveLogsButton).setOnClickListener {
-            saveLog.launch("dadway-vpn-8.0-${System.currentTimeMillis()}.txt")
+            saveLog.launch("dadway-vpn-8.2-${System.currentTimeMillis()}.txt")
         }
         findViewById<MaterialButton>(R.id.settingsButton).setOnClickListener { showSettings() }
 
@@ -94,24 +98,28 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupProfileSpinner() {
-        val profiles = ConnectionProfiles.all
-        val adapter = ArrayAdapter(
-            this,
-            R.layout.item_profile_selected,
-            profiles.map { it.title }
-        ).also { it.setDropDownViewResource(R.layout.item_profile_dropdown) }
-        profileSpinner.adapter = adapter
-        val selected = ConnectionProfiles.selected(this)
-        profileSpinner.setSelection(profiles.indexOfFirst { it.id == selected.id }.coerceAtLeast(0), false)
-        profileSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
-                val profile = profiles[position]
-                ConnectionProfiles.select(this@MainActivity, profile.id)
-                if (!AppState.current.running) server.text = profile.title
-            }
-            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+    private fun setupProfileCards() {
+        profileRussia.setOnClickListener { selectProfile(ConnectionProfiles.DEFAULT_ID) }
+        profileUsa.setOnClickListener { selectProfile(ConnectionProfiles.RESERVE_ID) }
+        profileNetherlands.setOnClickListener { selectProfile(ConnectionProfiles.NETHERLANDS_ID) }
+        updateProfileCards()
+    }
+
+    private fun selectProfile(id: String) {
+        if (AppState.current.running) {
+            toast("Отключите VPN для смены сервера")
+            return
         }
+        ConnectionProfiles.select(this, id)
+        server.text = ConnectionProfiles.byId(id).title
+        updateProfileCards()
+    }
+
+    private fun updateProfileCards() {
+        val selectedId = ConnectionProfiles.selected(this).id
+        profileRussia.setBackgroundResource(if (selectedId == ConnectionProfiles.DEFAULT_ID) R.drawable.card_selected else R.drawable.card_unselected)
+        profileUsa.setBackgroundResource(if (selectedId == ConnectionProfiles.RESERVE_ID) R.drawable.card_selected else R.drawable.card_unselected)
+        profileNetherlands.setBackgroundResource(if (selectedId == ConnectionProfiles.NETHERLANDS_ID) R.drawable.card_selected else R.drawable.card_unselected)
     }
 
     private fun requestVpn() {
@@ -205,20 +213,30 @@ class MainActivity : AppCompatActivity() {
         up.text = "↑ ${formatRate(state.upBps)}"
         total.text = "↓ ${formatBytes(state.totalDown)}\n↑ ${formatBytes(state.totalUp)}"
 
-        profileSpinner.isEnabled = !state.running && !state.status.contains("Подключ", ignoreCase = true)
+        val profileEnabled = !state.running && !state.status.contains("Подключ", ignoreCase = true)
+        profileRussia.isEnabled = profileEnabled
+        profileUsa.isEnabled = profileEnabled
+        profileNetherlands.isEnabled = profileEnabled
+        updateProfileCards()
 
         if (state.running) {
             connect.setBackgroundResource(R.drawable.btn_disconnect_selector)
             connect.contentDescription = getString(R.string.disconnect)
             statusIcon.setImageResource(R.drawable.status_connected)
+            connectCaption.text = "ОТКЛЮЧИТЬ" 
+            status.setTextColor(ContextCompat.getColor(this, R.color.dadway_success))
         } else if (state.status.contains("Подключ", ignoreCase = true) && !state.status.equals("Подключено", ignoreCase = true)) {
-            connect.setBackgroundResource(R.drawable.btn_connect_disabled)
+            connect.setBackgroundResource(R.drawable.connecting_ring)
             connect.contentDescription = getString(R.string.connecting)
             statusIcon.setImageResource(R.drawable.status_connecting)
+            connectCaption.text = "ПОДКЛЮЧЕНИЕ…"
+            status.setTextColor(ContextCompat.getColor(this, R.color.dadway_warning))
         } else {
             connect.setBackgroundResource(R.drawable.btn_connect_selector)
             connect.contentDescription = getString(R.string.connect)
             statusIcon.setImageResource(R.drawable.status_disconnected)
+            connectCaption.text = "ПОДКЛЮЧИТЬСЯ"
+            status.setTextColor(ContextCompat.getColor(this, R.color.dadway_danger))
         }
     }
 
