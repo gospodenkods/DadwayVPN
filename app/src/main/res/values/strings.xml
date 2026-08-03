@@ -11,7 +11,6 @@
     <string name="website">dadway.ru</string>
     <string name="website_upper">DADWAY.RU</string>
     <string name="telegram_channel">Telegram: @gds_technical</string>
-    <string name="telegram_channel_multiline">TELEGRAM:
-@GDS_TECHNICAL</string>
-    <string name="connection_profile">КОНФИГУРАЦИЯ ПОДКЛЮЧЕНИЯ</string>
+    <string name="telegram_channel_multiline">TELEGRAM:\n@GDS_TECHNICAL</string>
+    <string name="connection_profile">СЕРВЕР ПОДКЛЮЧЕНИЯ</string>
 </resources>

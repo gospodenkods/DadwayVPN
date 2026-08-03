@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:background="@drawable/sheet_background" android:orientation="vertical" android:padding="20dp">
+    <View android:layout_width="42dp" android:layout_height="4dp" android:layout_gravity="center_horizontal" android:background="@drawable/sheet_handle"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:gravity="center_vertical">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Выбор сервера" android:textColor="@color/dadway_text" android:textSize="24sp" android:textStyle="bold"/>
+            <TextView android:id="@+id/serversUpdatedText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Проверка доступности…" android:textColor="@color/dadway_text_secondary" android:textSize="13sp"/>
+        </LinearLayout>
+        <ImageButton android:id="@+id/sheetRefreshButton" android:layout_width="48dp" android:layout_height="48dp" android:background="?attr/selectableItemBackgroundBorderless" android:padding="11dp" android:src="@drawable/ic_refresh" android:tint="@color/dadway_primary"/>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/serverList" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:orientation="vertical"/>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:gravity="center" android:text="Недоступные серверы нельзя выбрать" android:textColor="@color/dadway_text_secondary" android:textSize="12sp"/>
+</LinearLayout>

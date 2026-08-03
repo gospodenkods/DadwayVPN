@@ -18,11 +18,7 @@ object AppState {
     @Volatile var current = UiState()
         private set
     private val listeners = CopyOnWriteArrayList<(UiState) -> Unit>()
-
-    fun update(transform: (UiState) -> UiState) {
-        current = transform(current)
-        listeners.forEach { it(current) }
-    }
+    fun update(transform: (UiState) -> UiState) { current = transform(current); listeners.forEach { it(current) } }
     fun observe(listener: (UiState) -> Unit) { listeners += listener; listener(current) }
     fun remove(listener: (UiState) -> Unit) { listeners -= listener }
 }

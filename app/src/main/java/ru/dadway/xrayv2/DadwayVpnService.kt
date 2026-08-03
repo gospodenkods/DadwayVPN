@@ -35,20 +35,8 @@ class DadwayVpnService : VpnService() {
         AppState.update { it.copy(status = "Подключение…") }
         scope.launch {
             try {
-                val requestedProfile = ConnectionProfiles.selected(this@DadwayVpnService)
-                var activeProfile = requestedProfile
-                val links = try {
-                    ConnectionProfiles.connectionText(this@DadwayVpnService, requestedProfile)
-                } catch (primaryError: Throwable) {
-                    if (requestedProfile.id != ConnectionProfiles.DEFAULT_ID) throw primaryError
-                    activeProfile = ConnectionProfiles.byId(ConnectionProfiles.SABINA_ID)
-                    LogStore.add(
-                        this@DadwayVpnService,
-                        "Сервер Россия недоступен (${primaryError.message}). Автоматическое переключение на USA"
-                    )
-                    ConnectionProfiles.connectionText(this@DadwayVpnService, activeProfile)
-                }
-                LogStore.add(this@DadwayVpnService, "Выбран профиль: ${activeProfile.title}")
+                val (activeServer, link) = ConnectionProfiles.connectionText(this@DadwayVpnService)
+                LogStore.add(this@DadwayVpnService, "Выбран сервер: ${activeServer.name}")
 
                 tun = Builder()
                     .setSession("Dadway VPN")
@@ -59,24 +47,22 @@ class DadwayVpnService : VpnService() {
                     .addDisallowedApplication(packageName)
                     .establish() ?: error("Android не создал VPN-интерфейс")
 
-                val sourceLink = ConnectionProfiles.firstShareLink(links)
-                val base = XrayBridge.linksToConfig(links)
+                val base = XrayBridge.linksToConfig(link)
                 val built = XrayConfigBuilder.build(
                     base = base,
                     tunFd = tun!!.fd,
                     filesDir = filesDir.absolutePath,
-                    sourceLink = sourceLink
+                    sourceLink = link
                 )
-                LogStore.add(this@DadwayVpnService, "Запуск VPN: профиль=${activeProfile.title}, протокол=${built.protocol}, сервер=${built.server}")
+                LogStore.add(this@DadwayVpnService, "Запуск VPN: узел=${activeServer.name}, протокол=${built.protocol}, сервер=${built.server}")
                 XrayBridge.run(built.json)
 
-                AppState.update { it.copy(running = true, status = "Подключено", server = built.server) }
-                updateNotification("Подключено: ${built.server}")
+                AppState.update { it.copy(running = true, status = "Подключено", server = activeServer.name) }
+                updateNotification("Подключено: ${activeServer.name}")
                 startMetrics()
             } catch (t: Throwable) {
-                LogStore.add(this@DadwayVpnService, "ОШИБКА запуска: ${t.stackTraceToString()}")
-                AppState.update { it.copy(running = false, status = "Ошибка: ${t.message}") }
-                stopVpn()
+                LogStore.add(this@DadwayVpnService, "Ошибка запуска: ${t.stackTraceToString()}")
+                stopVpn("Ошибка: ${t.message ?: "не удалось подключиться"}")
             }
         }
     }
@@ -97,11 +83,11 @@ class DadwayVpnService : VpnService() {
         }
     }
 
-    private fun stopVpn() {
+    private fun stopVpn(finalStatus: String = "Отключено") {
         metricsJob?.cancel(); metricsJob = null
         runCatching { XrayBridge.stop() }
         runCatching { tun?.close() }; tun = null
-        AppState.update { UiState(status = "Отключено") }
+        AppState.update { UiState(status = finalStatus) }
         LogStore.add(this, "VPN остановлен")
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -111,16 +97,20 @@ class DadwayVpnService : VpnService() {
     override fun onDestroy() { scope.cancel(); runCatching { XrayBridge.stop() }; runCatching { tun?.close() }; super.onDestroy() }
 
     private fun notification(text: String) = NotificationCompat.Builder(this, "vpn")
-        .setSmallIcon(android.R.drawable.stat_sys_warning)
+        .setSmallIcon(R.drawable.dadway_shield_small)
         .setContentTitle("Dadway VPN")
         .setContentText(text)
         .setOngoing(true)
         .setContentIntent(PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
         .build()
 
-    private fun updateNotification(text: String) = (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(42, notification(text))
+    private fun updateNotification(text: String) =
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(42, notification(text))
+
     private fun createChannel() {
-        if (Build.VERSION.SDK_INT >= 26) (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
-            .createNotificationChannel(NotificationChannel("vpn", "VPN-соединение", NotificationManager.IMPORTANCE_LOW))
+        if (Build.VERSION.SDK_INT >= 26) {
+            (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
+                .createNotificationChannel(NotificationChannel("vpn", "VPN-соединение", NotificationManager.IMPORTANCE_LOW))
+        }
     }
 }

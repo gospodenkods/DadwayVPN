@@ -6,15 +6,18 @@ import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.view.View
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.*
 import java.util.Locale
@@ -30,18 +33,23 @@ class MainActivity : AppCompatActivity() {
     private lateinit var total: TextView
     private lateinit var connect: ImageButton
     private lateinit var statusIcon: ImageView
-    private lateinit var profileRussia: View
-    private lateinit var profileUsa: View
-    private lateinit var profileNetherlands: View
     private lateinit var connectCaption: TextView
+    private lateinit var selectedCard: View
+    private lateinit var selectedFlag: ImageView
+    private lateinit var selectedName: TextView
+    private lateinit var selectedStatus: TextView
+    private var nodes: List<ServerNode> = emptyList()
+    private var serverSheet: BottomSheetDialog? = null
     private val listener: (UiState) -> Unit = { runOnUiThread { render(it) } }
 
     private val vpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == RESULT_OK) startService()
+        if (it.resultCode == RESULT_OK) startVpnService()
     }
     private val saveLog = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         if (uri != null) runCatching {
-            contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer -> writer.write("Dadway VPN 8.2 log export\n\n" + LogStore.read(this)) }
+            contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
+                writer.write("Dadway VPN 8.3 log export\n\n" + LogStore.read(this))
+            }
         }.onSuccess { toast("Лог сохранён") }.onFailure { toast("Ошибка: ${it.message}") }
     }
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -49,6 +57,27 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        bindViews()
+
+        selectedCard.setOnClickListener { showServerSheet() }
+        findViewById<ImageButton>(R.id.refreshServersButton).setOnClickListener { refreshServers(true) }
+        findViewById<TextView>(R.id.websiteLink).setOnClickListener { openExternal("https://dadway.ru") }
+        findViewById<TextView>(R.id.telegramLink).setOnClickListener { openExternal("https://t.me/gds_technical") }
+        connect.setOnClickListener { if (AppState.current.running) stopVpnService() else requestVpn() }
+        findViewById<MaterialButton>(R.id.updateButton).setOnClickListener { refreshServers(true) }
+        findViewById<MaterialButton>(R.id.testButton).setOnClickListener { testConnection() }
+        findViewById<MaterialButton>(R.id.ipButton).setOnClickListener { testConnection() }
+        findViewById<MaterialButton>(R.id.saveLogsButton).setOnClickListener {
+            saveLog.launch("dadway-vpn-8.3-${System.currentTimeMillis()}.txt")
+        }
+        findViewById<MaterialButton>(R.id.settingsButton).setOnClickListener { showSettings() }
+
+        if (Build.VERSION.SDK_INT >= 33) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        AppState.observe(listener)
+        refreshServers(false)
+    }
+
+    private fun bindViews() {
         status = findViewById(R.id.statusText)
         server = findViewById(R.id.serverText)
         ip = findViewById(R.id.ipText)
@@ -58,196 +87,202 @@ class MainActivity : AppCompatActivity() {
         total = findViewById(R.id.totalText)
         connect = findViewById(R.id.connectButton)
         statusIcon = findViewById(R.id.statusIcon)
-        profileRussia = findViewById(R.id.profileRussia)
-        profileUsa = findViewById(R.id.profileUsa)
-        profileNetherlands = findViewById(R.id.profileNetherlands)
         connectCaption = findViewById(R.id.connectCaption)
-        setupProfileCards()
-
-        findViewById<TextView>(R.id.websiteLink).setOnClickListener {
-            openExternal("https://dadway.ru")
-        }
-        findViewById<TextView>(R.id.telegramLink).setOnClickListener {
-            openExternal("https://t.me/gds_technical")
-        }
-
-        connect.setOnClickListener { if (AppState.current.running) stopService() else requestVpn() }
-        findViewById<MaterialButton>(R.id.updateButton).setOnClickListener { updateSubscription() }
-        findViewById<MaterialButton>(R.id.testButton).setOnClickListener { testConnection() }
-        findViewById<MaterialButton>(R.id.ipButton).setOnClickListener { testConnection() }
-        findViewById<MaterialButton>(R.id.saveLogsButton).setOnClickListener {
-            saveLog.launch("dadway-vpn-8.2-${System.currentTimeMillis()}.txt")
-        }
-        findViewById<MaterialButton>(R.id.settingsButton).setOnClickListener { showSettings() }
-
-        if (Build.VERSION.SDK_INT >= 33) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        AppState.observe(listener)
+        selectedCard = findViewById(R.id.selectedServerCard)
+        selectedFlag = findViewById(R.id.selectedServerFlag)
+        selectedName = findViewById(R.id.selectedServerName)
+        selectedStatus = findViewById(R.id.selectedServerStatus)
     }
 
     override fun onDestroy() {
+        serverSheet?.dismiss()
         AppState.remove(listener)
         scope.cancel()
         super.onDestroy()
     }
 
-    private fun openExternal(url: String) {
+    private fun refreshServers(showFeedback: Boolean) = scope.launch {
+        if (showFeedback) toast("Обновляем список серверов…")
+        selectedStatus.text = "Проверка доступности…"
         runCatching {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            val loaded = withContext(Dispatchers.IO) { ConnectionProfiles.load(this@MainActivity, true) }
+            ServerAvailabilityChecker.checkAll(loaded)
+        }.onSuccess {
+            nodes = it
+            renderSelectedServer()
+            serverSheet?.let { dialog -> renderServerSheet(dialog) }
+            if (showFeedback) toast("Список серверов обновлён")
         }.onFailure {
-            toast("Не удалось открыть ссылку")
+            selectedStatus.text = "Не удалось загрузить серверы"
+            toast("Ошибка подписки: ${it.message}")
+            LogStore.add(this@MainActivity, "Ошибка обновления подписки: ${it.message}")
         }
     }
 
-    private fun setupProfileCards() {
-        profileRussia.setOnClickListener { selectProfile(ConnectionProfiles.DEFAULT_ID) }
-        profileUsa.setOnClickListener { selectProfile(ConnectionProfiles.RESERVE_ID) }
-        profileNetherlands.setOnClickListener { selectProfile(ConnectionProfiles.NETHERLANDS_ID) }
-        updateProfileCards()
-    }
-
-    private fun selectProfile(id: String) {
+    private fun showServerSheet() {
         if (AppState.current.running) {
             toast("Отключите VPN для смены сервера")
             return
         }
-        ConnectionProfiles.select(this, id)
-        server.text = ConnectionProfiles.byId(id).title
-        updateProfileCards()
+        val dialog = BottomSheetDialog(this)
+        dialog.setContentView(R.layout.sheet_servers)
+        dialog.setOnDismissListener { serverSheet = null }
+        serverSheet = dialog
+        renderServerSheet(dialog)
+        dialog.show()
     }
 
-    private fun updateProfileCards() {
-        val selectedId = ConnectionProfiles.selected(this).id
-        profileRussia.setBackgroundResource(if (selectedId == ConnectionProfiles.DEFAULT_ID) R.drawable.card_selected else R.drawable.card_unselected)
-        profileUsa.setBackgroundResource(if (selectedId == ConnectionProfiles.RESERVE_ID) R.drawable.card_selected else R.drawable.card_unselected)
-        profileNetherlands.setBackgroundResource(if (selectedId == ConnectionProfiles.NETHERLANDS_ID) R.drawable.card_selected else R.drawable.card_unselected)
+    private fun renderServerSheet(dialog: BottomSheetDialog) {
+        val list = dialog.findViewById<LinearLayout>(R.id.serverList) ?: return
+        val updated = dialog.findViewById<TextView>(R.id.serversUpdatedText)
+        list.removeAllViews()
+        if (nodes.isEmpty()) {
+            updated?.text = "Загрузка серверов…"
+            return
+        }
+        updated?.text = "Обновлено только что • ${nodes.size} сервера"
+        val selectedId = ConnectionProfiles.selected(this, nodes).id
+        nodes.forEach { node ->
+            val item = LayoutInflater.from(this).inflate(R.layout.item_server, list, false)
+            val available = node.availability !is Availability.Unavailable
+            item.findViewById<ImageView>(R.id.serverFlag).setImageResource(flagFor(node.country))
+            item.findViewById<TextView>(R.id.serverName).text = node.name
+            val availability = item.findViewById<TextView>(R.id.serverAvailability)
+            val latency = item.findViewById<TextView>(R.id.serverLatency)
+            when (val state = node.availability) {
+                is Availability.Available -> {
+                    availability.text = "●  Доступен"
+                    availability.setTextColor(color(R.color.dadway_success))
+                    latency.text = "${state.latencyMs} мс"
+                }
+                Availability.Unavailable -> {
+                    availability.text = "●  Недоступен"
+                    availability.setTextColor(color(R.color.dadway_danger))
+                    latency.text = ""
+                    item.alpha = 0.58f
+                }
+                Availability.Unknown -> {
+                    availability.text = "●  Проверка…"
+                    availability.setTextColor(color(R.color.dadway_warning))
+                    latency.text = ""
+                }
+            }
+            item.setBackgroundResource(if (node.id == selectedId) R.drawable.card_selected else R.drawable.card_unselected)
+            item.isEnabled = available
+            item.setOnClickListener {
+                ConnectionProfiles.select(this, node)
+                renderSelectedServer()
+                dialog.dismiss()
+            }
+            list.addView(item)
+        }
+        dialog.findViewById<ImageButton>(R.id.sheetRefreshButton)?.setOnClickListener { refreshServers(true) }
+    }
+
+    private fun renderSelectedServer() {
+        if (nodes.isEmpty()) return
+        val node = ConnectionProfiles.selected(this, nodes)
+        selectedFlag.setImageResource(flagFor(node.country))
+        selectedName.text = node.name
+        server.text = node.name
+        when (val state = node.availability) {
+            is Availability.Available -> {
+                selectedStatus.text = "●  Доступен  •  ${state.latencyMs} мс"
+                selectedStatus.setTextColor(color(R.color.dadway_success))
+            }
+            Availability.Unavailable -> {
+                selectedStatus.text = "●  Недоступен"
+                selectedStatus.setTextColor(color(R.color.dadway_danger))
+            }
+            Availability.Unknown -> {
+                selectedStatus.text = "●  Проверка доступности…"
+                selectedStatus.setTextColor(color(R.color.dadway_warning))
+            }
+        }
+    }
+
+    private fun flagFor(country: Country) = when (country) {
+        Country.RUSSIA -> R.drawable.flag_russia
+        Country.GERMANY -> R.drawable.flag_germany
+        Country.USA -> R.drawable.flag_usa
+        Country.NETHERLANDS -> R.drawable.flag_netherlands
+        Country.UNKNOWN -> R.drawable.flag_unknown
     }
 
     private fun requestVpn() {
-        VpnService.prepare(this)?.let(vpnPermission::launch) ?: startService()
-    }
-
-    private fun startService() = ContextCompat.startForegroundService(
-        this,
-        Intent(this, DadwayVpnService::class.java).setAction(DadwayVpnService.ACTION_START)
-    )
-
-    private fun stopService() = startService(
-        Intent(this, DadwayVpnService::class.java).setAction(DadwayVpnService.ACTION_STOP)
-    )
-
-    private fun updateSubscription() = scope.launch {
-        toast("Обновление подписки…")
-        val profile = ConnectionProfiles.selected(this@MainActivity)
-        runCatching {
-            withContext(Dispatchers.IO) {
-                when (val source = profile.source) {
-                    is ConnectionProfile.Source.Subscription ->
-                        SubscriptionClient.fetch(
-                            context = this@MainActivity,
-                            subscriptionUrl = source.url,
-                            cacheKey = source.cacheKey
-                        )
-                }
-            }
+        if (nodes.isEmpty()) { toast("Дождитесь загрузки серверов"); return }
+        val selected = ConnectionProfiles.selected(this, nodes)
+        if (selected.availability is Availability.Unavailable) {
+            toast("Выбранный сервер недоступен. Выберите другой")
+            showServerSheet()
+            return
         }
-            .onSuccess {
-                LogStore.add(this@MainActivity, "Подписка обновлена вручную")
-                toast("Подписка обновлена")
-            }
-            .onFailure {
-                LogStore.add(this@MainActivity, "Ошибка подписки: ${it.message}")
-                toast("Ошибка: ${it.message}")
-            }
+        VpnService.prepare(this)?.let(vpnPermission::launch) ?: startVpnService()
     }
+
+    private fun startVpnService() = ContextCompat.startForegroundService(
+        this, Intent(this, DadwayVpnService::class.java).setAction(DadwayVpnService.ACTION_START)
+    )
+    private fun stopVpnService() = startService(Intent(this, DadwayVpnService::class.java).setAction(DadwayVpnService.ACTION_STOP))
 
     private fun testConnection() = scope.launch {
-        if (!AppState.current.running) {
-            toast("Сначала подключите VPN")
-            return@launch
-        }
+        if (!AppState.current.running) { toast("Сначала подключите VPN"); return@launch }
         ping.text = "Тест…"
         runCatching { withContext(Dispatchers.IO) { ConnectionTester.test() } }
             .onSuccess { result ->
-                AppState.update {
-                    it.copy(
-                        externalIp = result.ip,
-                        pingMs = result.pingMs,
-                        downBps = result.bytesPerSecond
-                    )
-                }
-                LogStore.add(
-                    this@MainActivity,
-                    "Тест: IP=${result.ip}, ping=${result.pingMs} мс, speed=${result.bytesPerSecond} B/s"
-                )
-            }
-            .onFailure {
-                ping.text = "Ошибка"
-                toast("Тест не выполнен: ${it.message}")
-            }
+                AppState.update { it.copy(externalIp = result.ip, pingMs = result.pingMs, downBps = result.bytesPerSecond) }
+            }.onFailure { ping.text = "Ошибка"; toast("Тест не выполнен: ${it.message}") }
     }
 
     private fun showSettings() {
-        AlertDialog.Builder(this)
-            .setTitle("Настройки Dadway VPN")
-            .setMessage(
-                "Подписка обновляется автоматически при подключении.\n\n" +
-                    "Маршрутизация напрямую: .ru, .by, .su и локальные сети.\n\n" +
-                    "Выбранная конфигурация: ${ConnectionProfiles.selected(this).title}\n\n" +
-                    "Текущий сервер: ${AppState.current.server}"
-            )
-            .setPositiveButton("Обновить подписку") { _, _ -> updateSubscription() }
-            .setNegativeButton("Закрыть", null)
-            .show()
+        AlertDialog.Builder(this).setTitle("Настройки Dadway VPN")
+            .setMessage("Серверы автоматически загружаются из подписки Dadway.\n\nВыбранный сервер: ${selectedName.text}\n\nНедоступные узлы блокируются до следующей проверки.")
+            .setPositiveButton("Обновить серверы") { _, _ -> refreshServers(true) }
+            .setNegativeButton("Закрыть", null).show()
     }
 
     private fun render(state: UiState) {
-        status.text = state.status
-        server.text = if (!state.running && state.server == "—") {
-            ConnectionProfiles.selected(this).title
-        } else {
-            state.server
-        }
         ip.text = state.externalIp
         ping.text = state.pingMs?.let { "$it мс" } ?: "—"
         down.text = "↓ ${formatRate(state.downBps)}"
         up.text = "↑ ${formatRate(state.upBps)}"
-        total.text = "↓ ${formatBytes(state.totalDown)}\n↑ ${formatBytes(state.totalUp)}"
+        total.text = "↓ ${formatBytes(state.totalDown)}  •  ↑ ${formatBytes(state.totalUp)}"
+        selectedCard.isEnabled = !state.running && !state.status.contains("Подключение", true)
 
-        val profileEnabled = !state.running && !state.status.contains("Подключ", ignoreCase = true)
-        profileRussia.isEnabled = profileEnabled
-        profileUsa.isEnabled = profileEnabled
-        profileNetherlands.isEnabled = profileEnabled
-        updateProfileCards()
-
-        if (state.running) {
-            connect.setBackgroundResource(R.drawable.btn_disconnect_selector)
-            connect.contentDescription = getString(R.string.disconnect)
-            statusIcon.setImageResource(R.drawable.status_connected)
-            connectCaption.text = "ОТКЛЮЧИТЬ" 
-            status.setTextColor(ContextCompat.getColor(this, R.color.dadway_success))
-        } else if (state.status.contains("Подключ", ignoreCase = true) && !state.status.equals("Подключено", ignoreCase = true)) {
-            connect.setBackgroundResource(R.drawable.connecting_ring)
-            connect.contentDescription = getString(R.string.connecting)
-            statusIcon.setImageResource(R.drawable.status_connecting)
-            connectCaption.text = "ПОДКЛЮЧЕНИЕ…"
-            status.setTextColor(ContextCompat.getColor(this, R.color.dadway_warning))
-        } else {
-            connect.setBackgroundResource(R.drawable.btn_connect_selector)
-            connect.contentDescription = getString(R.string.connect)
-            statusIcon.setImageResource(R.drawable.status_disconnected)
-            connectCaption.text = "ПОДКЛЮЧИТЬСЯ"
-            status.setTextColor(ContextCompat.getColor(this, R.color.dadway_danger))
+        when {
+            state.running -> {
+                status.text = "Защита активна"
+                status.setTextColor(color(R.color.dadway_success))
+                connect.setBackgroundResource(R.drawable.btn_disconnect_selector)
+                connectCaption.text = "ОТКЛЮЧИТЬ"
+                statusIcon.setImageResource(R.drawable.status_connected)
+            }
+            state.status.contains("Подключение", true) -> {
+                status.text = "Подключение…"
+                status.setTextColor(color(R.color.dadway_warning))
+                connect.setBackgroundResource(R.drawable.connecting_ring)
+                connectCaption.text = "ПОДКЛЮЧЕНИЕ…"
+                statusIcon.setImageResource(R.drawable.status_connecting)
+            }
+            else -> {
+                status.text = if (state.status.startsWith("Ошибка")) state.status else "Защита выключена"
+                status.setTextColor(color(R.color.dadway_danger))
+                connect.setBackgroundResource(R.drawable.btn_connect_selector)
+                connectCaption.text = "ПОДКЛЮЧИТЬСЯ"
+                statusIcon.setImageResource(R.drawable.status_disconnected)
+            }
         }
     }
 
+    private fun openExternal(url: String) = runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+        .onFailure { toast("Не удалось открыть ссылку") }
     private fun formatRate(value: Long) = "${formatBytes(value)}/с"
-
     private fun formatBytes(value: Long): String = when {
         value >= 1_073_741_824 -> String.format(Locale.US, "%.2f ГБ", value / 1_073_741_824.0)
         value >= 1_048_576 -> String.format(Locale.US, "%.2f МБ", value / 1_048_576.0)
         value >= 1024 -> String.format(Locale.US, "%.1f КБ", value / 1024.0)
         else -> "$value Б"
     }
-
+    private fun color(id: Int) = ContextCompat.getColor(this, id)
     private fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()
 }

@@ -15,28 +15,15 @@ object SubscriptionClient {
             requestMethod = "GET"
             instanceFollowRedirects = true
             setRequestProperty("Accept", "text/plain, */*")
-            setRequestProperty("User-Agent", "DadwayVPN/7.5.0-Debug Android")
+            setRequestProperty("User-Agent", "DadwayVPN/8.3.0 Android")
         }
-
         try {
             val code = connection.responseCode
-            if (code !in 200..299) {
-                error("HTTP $code при загрузке подписки")
-            }
-
-            val raw = connection.inputStream
-                .bufferedReader(Charsets.UTF_8)
-                .use { it.readText() }
-                .trim()
+            if (code !in 200..299) error("HTTP $code при загрузке подписки")
+            val raw = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }.trim()
             val decoded = decodeIfBase64(raw)
-            require(decoded.contains("://")) {
-                "Подписка не содержит ссылок подключения"
-            }
-
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .edit()
-                .putString(cacheKey, decoded)
-                .apply()
+            require(decoded.contains("://")) { "Подписка не содержит ссылок подключения" }
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(cacheKey, decoded).apply()
             return decoded
         } finally {
             connection.disconnect()
@@ -44,17 +31,12 @@ object SubscriptionClient {
     }
 
     fun cached(context: Context, cacheKey: String): String? =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(cacheKey, null)
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(cacheKey, null)
 
     private fun decodeIfBase64(value: String): String {
         if (value.contains("://")) return value
-
         return runCatching {
-            val normalized = value
-                .replace("\n", "")
-                .replace("\r", "")
-                .trim()
+            val normalized = value.replace("\n", "").replace("\r", "").trim()
             String(Base64.decode(normalized, Base64.DEFAULT), Charsets.UTF_8).trim()
         }.getOrDefault(value)
     }
