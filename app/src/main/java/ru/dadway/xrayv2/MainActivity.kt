@@ -229,6 +229,7 @@ class MainActivity : AppCompatActivity() {
         Country.GERMANY -> R.drawable.flag_germany
         Country.USA -> R.drawable.flag_usa
         Country.NETHERLANDS -> R.drawable.flag_netherlands
+        Country.UNITED_KINGDOM -> R.drawable.flag_uk
         Country.UNKNOWN -> R.drawable.flag_unknown
     }
 

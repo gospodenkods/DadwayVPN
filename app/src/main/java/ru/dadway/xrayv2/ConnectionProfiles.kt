@@ -3,7 +3,8 @@ package ru.dadway.xrayv2
 import android.content.Context
 
 object ConnectionProfiles {
-    const val SUBSCRIPTION_URL = "https://devel.dadway.ru/sub/dadway"
+    const val SUBSCRIPTION_URL =
+        "https://devel.dadway.ru/sub/promo#https%3A%2F%2Fdadway.ru"
     private const val PREFS = "dadway_servers"
     private const val CACHE_KEY = "dadway_subscription_text"
     private const val KEY_SELECTED = "selected_server_id"
