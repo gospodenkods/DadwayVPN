@@ -17,6 +17,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.*
@@ -56,7 +59,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
+        applySystemInsets()
         bindViews()
 
         selectedCard.setOnClickListener { showServerSheet() }
@@ -94,6 +99,15 @@ class MainActivity : AppCompatActivity() {
         selectedStatus = findViewById(R.id.selectedServerStatus)
     }
 
+    private fun applySystemInsets() {
+        val root = findViewById<View>(R.id.rootScroll)
+        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(0, bars.top, 0, bars.bottom)
+            insets
+        }
+    }
+
     override fun onDestroy() {
         serverSheet?.dismiss()
         AppState.remove(listener)
@@ -126,6 +140,7 @@ class MainActivity : AppCompatActivity() {
         }
         val dialog = BottomSheetDialog(this)
         dialog.setContentView(R.layout.sheet_servers)
+        dialog.window?.navigationBarColor = color(R.color.dadway_background)
         dialog.setOnDismissListener { serverSheet = null }
         serverSheet = dialog
         renderServerSheet(dialog)

@@ -9,5 +9,19 @@
         <item name="colorSecondary">@color/dadway_primary_dark</item>
         <item name="colorError">@color/dadway_danger</item>
         <item name="android:windowBackground">@color/dadway_background</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    <style name="DadwayBottomNavButton" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:textColor">@color/dadway_text_secondary</item>
+        <item name="android:textSize">8sp</item>
+        <item name="iconGravity">top</item>
+        <item name="iconSize">21dp</item>
+        <item name="iconPadding">2dp</item>
+        <item name="iconTint">@color/dadway_text_secondary</item>
+        <item name="android:insetTop">1dp</item>
+        <item name="android:insetBottom">1dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
     </style>
 </resources>
