@@ -1,4 +1,4 @@
-name: Build Dadway VPN v8.3.2 APK
+name: Build Dadway VPN v8.3.3 APK
 on:
   workflow_dispatch:
   push:
@@ -52,20 +52,20 @@ jobs:
         if: success()
         run: |
           mkdir -p output
-          cp app/build/outputs/apk/debug/app-debug.apk output/DadwayVPN-v8.3.2-debug.apk
-          sha256sum output/DadwayVPN-v8.3.2-debug.apk > output/DadwayVPN-v8.3.2-debug.apk.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk output/DadwayVPN-v8.3.3-debug.apk
+          sha256sum output/DadwayVPN-v8.3.3-debug.apk > output/DadwayVPN-v8.3.3-debug.apk.sha256
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: DadwayVPN-v8.3.2-apk
+          name: DadwayVPN-v8.3.3-apk
           path: output/
           retention-days: 30
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: DadwayVPN-v8.3.2-build-logs
+          name: DadwayVPN-v8.3.3-build-logs
           path: |
             build.log
             libxray-build.log

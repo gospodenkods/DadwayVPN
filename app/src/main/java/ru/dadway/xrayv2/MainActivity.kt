@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity() {
         bindViews()
 
         selectedCard.setOnClickListener { showServerSheet() }
-        findViewById<ImageButton>(R.id.refreshServersButton).setOnClickListener { refreshServers(true) }
+        findViewById<View>(R.id.refreshServersButton).setOnClickListener { refreshServers(true) }
         findViewById<TextView>(R.id.websiteLink).setOnClickListener { openExternal("https://dadway.ru") }
         findViewById<TextView>(R.id.telegramLink).setOnClickListener { openExternal("https://t.me/gds_technical") }
         connect.setOnClickListener { if (AppState.current.running) stopVpnService() else requestVpn() }
