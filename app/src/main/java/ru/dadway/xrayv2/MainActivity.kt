@@ -2,6 +2,8 @@ package ru.dadway.xrayv2
 
 import android.Manifest
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.net.VpnService
 import android.os.Build
@@ -10,6 +12,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -141,6 +144,11 @@ class MainActivity : AppCompatActivity() {
         val dialog = BottomSheetDialog(this)
         dialog.setContentView(R.layout.sheet_servers)
         dialog.window?.navigationBarColor = color(R.color.dadway_background)
+        dialog.setOnShowListener {
+            dialog.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
+                ?.background = ColorDrawable(Color.TRANSPARENT)
+            dialog.window?.decorView?.setBackgroundColor(Color.TRANSPARENT)
+        }
         dialog.setOnDismissListener { serverSheet = null }
         serverSheet = dialog
         renderServerSheet(dialog)
