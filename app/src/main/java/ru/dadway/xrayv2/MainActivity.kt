@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.FrameLayout
@@ -24,6 +25,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.*
 import java.util.Locale
@@ -145,8 +147,15 @@ class MainActivity : AppCompatActivity() {
         dialog.setContentView(R.layout.sheet_servers)
         dialog.window?.navigationBarColor = color(R.color.dadway_background)
         dialog.setOnShowListener {
-            dialog.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
-                ?.background = ColorDrawable(Color.TRANSPARENT)
+            dialog.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)?.let { sheet ->
+                sheet.background = ColorDrawable(Color.TRANSPARENT)
+                sheet.layoutParams = sheet.layoutParams.apply { height = ViewGroup.LayoutParams.MATCH_PARENT }
+                BottomSheetBehavior.from(sheet).apply {
+                    state = BottomSheetBehavior.STATE_EXPANDED
+                    skipCollapsed = true
+                    isFitToContents = true
+                }
+            }
             dialog.window?.decorView?.setBackgroundColor(Color.TRANSPARENT)
         }
         dialog.setOnDismissListener { serverSheet = null }
@@ -163,7 +172,7 @@ class MainActivity : AppCompatActivity() {
             updated?.text = "Загрузка серверов…"
             return
         }
-        updated?.text = "Обновлено только что • ${nodes.size} сервера"
+        updated?.text = "Обновлено только что • ${nodes.size} серверов"
         val selectedId = ConnectionProfiles.selected(this, nodes).id
         nodes.forEach { node ->
             val item = LayoutInflater.from(this).inflate(R.layout.item_server, list, false)
