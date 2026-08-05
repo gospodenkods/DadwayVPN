@@ -12,7 +12,7 @@ android {
         minSdk = 23
         targetSdk = 35
         versionCode = 126
-        versionName = "8.3.4-test"
+        versionName = "8.3.4"
     }
 
     buildTypes {
@@ -27,6 +27,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+    buildFeatures { buildConfig = true }
     packaging { resources.excludes += setOf("META-INF/LICENSE*", "META-INF/NOTICE*") }
 }
 

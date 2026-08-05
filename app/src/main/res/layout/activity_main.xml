@@ -9,10 +9,17 @@
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="44dp" android:gravity="center_vertical">
             <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@drawable/dadway_shield_small" android:contentDescription="@string/app_name"/>
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="9dp"
-                android:text="DADWAY" android:textColor="@color/dadway_primary" android:textSize="20sp" android:textStyle="bold"/>
-            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="5dp"
-                android:text="VPN" android:textColor="@color/dadway_danger" android:textSize="20sp" android:textStyle="bold"/>
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:layout_marginStart="9dp" android:orientation="vertical">
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="DADWAY" android:textColor="@color/dadway_primary" android:textSize="20sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="5dp"
+                        android:text="VPN" android:textColor="@color/dadway_danger" android:textSize="20sp" android:textStyle="bold"/>
+                </LinearLayout>
+                <TextView android:id="@+id/versionText" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Версия 8.3.4" android:textColor="@color/dadway_text_secondary" android:textSize="9sp"/>
+            </LinearLayout>
             <TextView android:id="@+id/websiteLink" android:layout_width="wrap_content" android:layout_height="44dp" android:gravity="center"
                 android:text="dadway.ru" android:textColor="@color/dadway_text_secondary" android:textSize="12sp" android:paddingStart="8dp"/>
         </LinearLayout>

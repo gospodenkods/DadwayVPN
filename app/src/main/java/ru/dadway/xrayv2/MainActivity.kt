@@ -68,6 +68,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         applySystemInsets()
         bindViews()
+        findViewById<TextView>(R.id.versionText).text = "Версия ${BuildConfig.VERSION_NAME}"
 
         selectedCard.setOnClickListener { showServerSheet() }
         findViewById<View>(R.id.refreshServersButton).setOnClickListener { refreshServers(true) }
