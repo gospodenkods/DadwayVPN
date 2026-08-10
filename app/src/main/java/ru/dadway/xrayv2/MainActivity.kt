@@ -20,6 +20,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -65,6 +66,7 @@ class MainActivity : AppCompatActivity() {
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        applySavedTheme()
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
@@ -88,6 +90,12 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= 33) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         AppState.observe(listener)
         refreshServers(false)
+    }
+
+    private fun applySavedTheme() {
+        val mode = getSharedPreferences("dadway_ui", MODE_PRIVATE)
+            .getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        if (AppCompatDelegate.getDefaultNightMode() != mode) AppCompatDelegate.setDefaultNightMode(mode)
     }
 
     private fun bindViews() {
@@ -291,10 +299,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSettings() {
-        AlertDialog.Builder(this).setTitle("Настройки Dadway VPN")
-            .setMessage("Серверы автоматически загружаются из подписки Dadway.\n\nВыбранный сервер: ${selectedName.text}\n\nНедоступные узлы блокируются до следующей проверки.")
-            .setPositiveButton("Обновить серверы") { _, _ -> refreshServers(true) }
-            .setNegativeButton("Закрыть", null).show()
+        val labels = arrayOf("Системная тема", "Светлая тема", "Тёмная тема")
+        val modes = intArrayOf(
+            AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
+            AppCompatDelegate.MODE_NIGHT_NO,
+            AppCompatDelegate.MODE_NIGHT_YES
+        )
+        val prefs = getSharedPreferences("dadway_ui", MODE_PRIVATE)
+        val current = prefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        AlertDialog.Builder(this)
+            .setTitle("Тема оформления")
+            .setSingleChoiceItems(labels, modes.indexOf(current).coerceAtLeast(0)) { dialog, which ->
+                prefs.edit().putInt("theme_mode", modes[which]).apply()
+                dialog.dismiss()
+                AppCompatDelegate.setDefaultNightMode(modes[which])
+            }
+            .setNeutralButton("Обновить серверы") { _, _ -> refreshServers(true) }
+            .setNegativeButton("Закрыть", null)
+            .show()
     }
 
     private fun render(state: UiState) {

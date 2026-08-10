@@ -11,8 +11,8 @@ android {
         applicationId = "ru.dadway.xrayv2"
         minSdk = 23
         targetSdk = 35
-        versionCode = 127
-        versionName = "8.4.0"
+        versionCode = 128
+        versionName = "8.4.1"
     }
 
     buildTypes {
