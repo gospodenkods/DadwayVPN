@@ -22,8 +22,8 @@ android {
         applicationId = "ru.dadway.xrayv2"
         minSdk = 23
         targetSdk = 35
-        versionCode = 129
-        versionName = "8.4.2"
+        versionCode = 130
+        versionName = "8.4.3"
     }
 
     signingConfigs {
