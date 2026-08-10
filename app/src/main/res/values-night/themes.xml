@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources><style name="Theme.DadwayVPN" parent="Theme.Material3.DayNight.NoActionBar">
+    <item name="android:fontFamily">sans</item><item name="android:windowLightStatusBar">false</item><item name="android:windowLightNavigationBar">false</item>
+    <item name="android:statusBarColor">@color/dadway_background</item><item name="android:navigationBarColor">@color/dadway_background</item>
+    <item name="colorPrimary">@color/dadway_primary</item><item name="colorSecondary">@color/dadway_primary_dark</item>
+    <item name="colorError">@color/dadway_danger</item><item name="android:windowBackground">@color/dadway_background</item>
+    <item name="android:windowNoTitle">true</item>
+</style></resources>

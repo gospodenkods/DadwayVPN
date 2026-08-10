@@ -48,6 +48,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var selectedStatus: TextView
     private var nodes: List<ServerNode> = emptyList()
     private var serverSheet: BottomSheetDialog? = null
+    private var autoTestJob: Job? = null
+    private var wasRunning = false
     private val listener: (UiState) -> Unit = { runOnUiThread { render(it) } }
 
     private val vpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -268,6 +270,26 @@ class MainActivity : AppCompatActivity() {
             }.onFailure { ping.text = "Ошибка"; toast("Тест не выполнен: ${it.message}") }
     }
 
+    private fun runAutomaticConnectionTest(firstConnection: Boolean) {
+        autoTestJob?.cancel()
+        autoTestJob = scope.launch {
+            if (firstConnection) {
+                AppState.update { it.copy(status = "Проверка IP…") }
+                delay(350)
+                AppState.update { it.copy(status = "Измерение задержки и скорости…") }
+            }
+            runCatching { withContext(Dispatchers.IO) { ConnectionTester.test() } }
+                .onSuccess { result ->
+                    AppState.update {
+                        it.copy(status = "Готово", externalIp = result.ip, pingMs = result.pingMs, downBps = result.bytesPerSecond)
+                    }
+                    getSharedPreferences("dadway_onboarding", MODE_PRIVATE).edit()
+                        .putBoolean("first_connection_test_completed", true).apply()
+                }
+                .onFailure { LogStore.add(this@MainActivity, "Автоматический тест: ${it.message}") }
+        }
+    }
+
     private fun showSettings() {
         AlertDialog.Builder(this).setTitle("Настройки Dadway VPN")
             .setMessage("Серверы автоматически загружаются из подписки Dadway.\n\nВыбранный сервер: ${selectedName.text}\n\nНедоступные узлы блокируются до следующей проверки.")
@@ -276,6 +298,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun render(state: UiState) {
+        val justConnected = state.running && !wasRunning
+        wasRunning = state.running
+        if (justConnected) {
+            val completed = getSharedPreferences("dadway_onboarding", MODE_PRIVATE)
+                .getBoolean("first_connection_test_completed", false)
+            runAutomaticConnectionTest(firstConnection = !completed)
+        }
         ip.text = state.externalIp
         ping.text = state.pingMs?.let { "$it мс" } ?: "—"
         down.text = "↓ ${formatRate(state.downBps)}"
@@ -285,7 +314,10 @@ class MainActivity : AppCompatActivity() {
 
         when {
             state.running -> {
-                status.text = "Защита активна"
+                status.text = when {
+                    state.status.startsWith("Проверка") || state.status.startsWith("Измерение") || state.status == "Готово" -> state.status
+                    else -> "Защита активна"
+                }
                 status.setTextColor(color(R.color.dadway_success))
                 connect.setBackgroundResource(R.drawable.btn_disconnect_selector)
                 connectCaption.text = "ОТКЛЮЧИТЬ"
