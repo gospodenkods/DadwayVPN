@@ -89,7 +89,18 @@
         <com.google.android.material.button.MaterialButton android:id="@+id/updateButton" android:layout_width="match_parent" android:layout_height="46dp"
             android:layout_marginTop="8dp" android:text="ОБНОВИТЬ СПИСОК СЕРВЕРОВ" android:textSize="12sp" android:textColor="@color/dadway_primary"
             app:backgroundTint="@color/dadway_surface" app:cornerRadius="18dp" app:strokeColor="@color/card_stroke" app:strokeWidth="1dp"/>
-        <TextView android:id="@+id/telegramLink" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="7dp"
-            android:gravity="center" android:text="Telegram: @gds_technical" android:textColor="@color/dadway_text_secondary" android:textSize="10sp"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp"
+            android:gravity="center" android:orientation="horizontal">
+            <TextView android:id="@+id/telegramLink" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true"
+                android:gravity="center_vertical" android:minHeight="40dp" android:paddingHorizontal="9dp"
+                android:text="Telegram" android:textColor="@color/dadway_text_secondary" android:textSize="10sp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="•"
+                android:textColor="@color/card_stroke" android:textSize="11sp"/>
+            <TextView android:id="@+id/projectHelpLink" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true"
+                android:gravity="center_vertical" android:minHeight="40dp" android:paddingHorizontal="9dp"
+                android:text="Помощь проекту" android:textColor="@color/dadway_primary" android:textSize="10sp" android:textStyle="bold"/>
+        </LinearLayout>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
