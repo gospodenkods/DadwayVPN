@@ -14,6 +14,8 @@ class DadwayVpnService : VpnService() {
     companion object {
         const val ACTION_START = "ru.dadway.xrayv2.START"
         const val ACTION_STOP = "ru.dadway.xrayv2.STOP"
+        private const val NOTIFICATION_ID = 42
+        private const val CHANNEL_ID = "vpn_connection"
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -31,7 +33,7 @@ class DadwayVpnService : VpnService() {
     }
 
     private fun startVpn() {
-        startForeground(42, notification("Подключение…"))
+        startForeground(NOTIFICATION_ID, notification("Подключение…"))
         AppState.update { it.copy(status = "Подключение…") }
         scope.launch {
             try {
@@ -96,21 +98,39 @@ class DadwayVpnService : VpnService() {
     override fun onRevoke() { stopVpn(); super.onRevoke() }
     override fun onDestroy() { scope.cancel(); runCatching { XrayBridge.stop() }; runCatching { tun?.close() }; super.onDestroy() }
 
-    private fun notification(text: String) = NotificationCompat.Builder(this, "vpn")
-        .setSmallIcon(R.drawable.dadway_shield_small)
-        .setContentTitle("Dadway VPN")
+    private fun notification(text: String) = NotificationCompat.Builder(this, CHANNEL_ID)
+        .setSmallIcon(R.drawable.ic_notification_vpn)
+        .setContentTitle(if (AppState.current.running) "Dadway VPN подключён" else "Dadway VPN")
         .setContentText(text)
         .setOngoing(true)
+        .setOnlyAlertOnce(true)
+        .setCategory(NotificationCompat.CATEGORY_SERVICE)
+        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        .setPriority(NotificationCompat.PRIORITY_LOW)
+        .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
         .setContentIntent(PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
+        .addAction(
+            R.drawable.ic_notification_vpn,
+            "Отключить",
+            PendingIntent.getService(
+                this,
+                1,
+                Intent(this, DadwayVpnService::class.java).setAction(ACTION_STOP),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        )
         .build()
 
     private fun updateNotification(text: String) =
-        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(42, notification(text))
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(NOTIFICATION_ID, notification(text))
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT >= 26) {
             (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
-                .createNotificationChannel(NotificationChannel("vpn", "VPN-соединение", NotificationManager.IMPORTANCE_LOW))
+                .createNotificationChannel(NotificationChannel(CHANNEL_ID, "Активное VPN-соединение", NotificationManager.IMPORTANCE_LOW).apply {
+                    description = "Состояние подключения Dadway VPN и выбранный сервер"
+                    setShowBadge(false)
+                })
         }
     }
 }

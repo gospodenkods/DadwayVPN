@@ -2,12 +2,14 @@ package ru.dadway.xrayv2
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -63,7 +65,9 @@ class MainActivity : AppCompatActivity() {
             }
         }.onSuccess { toast("Лог сохранён") }.onFailure { toast("Ошибка: ${it.message}") }
     }
-    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) requestVpnPermission() else showNotificationRequiredDialog()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         applySavedTheme()
@@ -90,7 +94,6 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<MaterialButton>(R.id.settingsButton).setOnClickListener { showSettings() }
 
-        if (Build.VERSION.SDK_INT >= 33) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         AppState.observe(listener)
         refreshServers(false)
     }
@@ -264,7 +267,28 @@ class MainActivity : AppCompatActivity() {
             showServerSheet()
             return
         }
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            requestVpnPermission()
+        }
+    }
+
+    private fun requestVpnPermission() {
         VpnService.prepare(this)?.let(vpnPermission::launch) ?: startVpnService()
+    }
+
+    private fun showNotificationRequiredDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Разрешите уведомления")
+            .setMessage("Dadway VPN показывает активное подключение и выбранный сервер в системной шторке. Без этого разрешения подключение не будет скрыто запускаться в фоне.")
+            .setPositiveButton("Открыть настройки") { _, _ ->
+                startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
+            }
+            .setNegativeButton("Отмена", null)
+            .show()
     }
 
     private fun startVpnService() = ContextCompat.startForegroundService(
