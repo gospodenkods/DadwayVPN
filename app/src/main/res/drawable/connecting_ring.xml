@@ -2,5 +2,5 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item><shape android:shape="oval"><solid android:color="#20FFC400"/><stroke android:width="2dp" android:color="#55FFC400"/></shape></item>
     <item android:left="5dp" android:top="5dp" android:right="5dp" android:bottom="5dp"><shape android:shape="oval"><gradient android:type="sweep" android:startColor="#FFC400" android:centerColor="#FF7A00" android:endColor="#6B5200"/></shape></item>
-    <item android:left="11dp" android:top="11dp" android:right="11dp" android:bottom="11dp"><shape android:shape="oval"><solid android:color="#080E13"/></shape></item>
+    <item android:left="11dp" android:top="11dp" android:right="11dp" android:bottom="11dp"><shape android:shape="oval"><solid android:color="@color/dadway_surface"/></shape></item>
 </layer-list>

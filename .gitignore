@@ -8,3 +8,5 @@ app/libs/*.aar
 !app/libs/README.txt
 *.jks
 *.keystore
+.signing/
+.signing-audit/

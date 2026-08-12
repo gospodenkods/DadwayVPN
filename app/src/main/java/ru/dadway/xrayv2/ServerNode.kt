@@ -18,6 +18,7 @@ enum class Country(val displayName: String) {
     GERMANY("Германия"),
     USA("США"),
     NETHERLANDS("Нидерланды"),
+    UNITED_KINGDOM("Великобритания"),
     UNKNOWN("Сервер")
 }
 
@@ -40,7 +41,7 @@ object ServerNodeParser {
     private fun parse(link: String): ServerNode? = runCatching {
         val uri = Uri.parse(link)
         val encodedName = link.substringAfter('#', "")
-        val name = if (encodedName.isBlank()) uri.host.orEmpty() else Uri.decode(encodedName)
+        val name = (if (encodedName.isBlank()) uri.host.orEmpty() else Uri.decode(encodedName)).trim()
         val host = uri.host?.let(IDN::toASCII).orEmpty()
         val port = if (uri.port > 0) uri.port else defaultPort(uri.scheme)
         require(host.isNotBlank() && port > 0)
@@ -55,6 +56,7 @@ object ServerNodeParser {
             listOf("германия", "germany", "de ", "🇩🇪").any(value::contains) -> Country.GERMANY
             listOf("сша", "usa", "united states", "us ", "🇺🇸").any(value::contains) -> Country.USA
             listOf("нидерланды", "netherlands", "holland", "nl ", "🇳🇱").any(value::contains) -> Country.NETHERLANDS
+            listOf("великобритания", "united kingdom", "great britain", "uk ", "gb ", "🇬🇧").any(value::contains) -> Country.UNITED_KINGDOM
             else -> Country.UNKNOWN
         }
     }

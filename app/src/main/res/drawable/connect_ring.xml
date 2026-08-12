@@ -5,6 +5,6 @@
         <shape android:shape="oval"><gradient android:type="sweep" android:startColor="#FFD000" android:centerColor="#FF6A00" android:endColor="#FF2828"/></shape>
     </item>
     <item android:left="11dp" android:top="11dp" android:right="11dp" android:bottom="11dp">
-        <shape android:shape="oval"><gradient android:type="radial" android:gradientRadius="90dp" android:centerColor="#111B21" android:endColor="#060B0F"/><stroke android:width="1dp" android:color="#39444C"/></shape>
+        <shape android:shape="oval"><gradient android:type="radial" android:gradientRadius="90dp" android:centerColor="@color/dadway_surface_alt" android:endColor="@color/dadway_surface"/><stroke android:width="1dp" android:color="@color/card_stroke"/></shape>
     </item>
 </layer-list>
