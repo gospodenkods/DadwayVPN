@@ -10,9 +10,9 @@ data class SubscriptionLoadResult(
 
 object ConnectionProfiles {
     const val SUBSCRIPTION_URL =
-        "https://devel.dadway.ru/sub/promo#https%3A%2F%2Fdadway.ru"
+        "https://devel.dadway.ru/sub/zpp#dadway.ru"
     private const val PREFS = "dadway_servers"
-    private const val CACHE_KEY = "dadway_subscription_text"
+    private const val CACHE_KEY = "dadway_subscription_zpp_test_text"
     private const val KEY_SELECTED = "selected_server_id"
 
     fun loadWithStatus(

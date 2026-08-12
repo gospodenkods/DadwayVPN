@@ -65,8 +65,8 @@ jobs:
         if: success()
         run: |
           mkdir -p output
-          cp app/build/outputs/apk/release/app-release.apk output/DadwayVPN-v8.4.7-adaptive-release.apk
-          sha256sum output/DadwayVPN-v8.4.7-adaptive-release.apk > output/DadwayVPN-v8.4.7-adaptive-release.apk.sha256
+          cp app/build/outputs/apk/release/app-release.apk output/DadwayVPN-v8.4.8-test-zpp-release.apk
+          sha256sum output/DadwayVPN-v8.4.8-test-zpp-release.apk > output/DadwayVPN-v8.4.8-test-zpp-release.apk.sha256
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
