@@ -21,6 +21,7 @@ class DadwayVpnService : VpnService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var tun: ParcelFileDescriptor? = null
     private var metricsJob: Job? = null
+    private var subscriptionValidationJob: Job? = null
 
     override fun onCreate() { super.onCreate(); createChannel() }
 
@@ -62,6 +63,7 @@ class DadwayVpnService : VpnService() {
                 AppState.update { it.copy(running = true, status = "Подключено", server = activeServer.name) }
                 updateNotification("Подключено: ${activeServer.name}")
                 startMetrics()
+                startSubscriptionValidation()
             } catch (t: Throwable) {
                 LogStore.add(this@DadwayVpnService, "Ошибка запуска: ${t.stackTraceToString()}")
                 stopVpn("Ошибка: ${t.message ?: "не удалось подключиться"}")
@@ -85,8 +87,31 @@ class DadwayVpnService : VpnService() {
         }
     }
 
+    private fun startSubscriptionValidation() {
+        subscriptionValidationJob?.cancel()
+        subscriptionValidationJob = scope.launch {
+            while (isActive) {
+                delay(60_000)
+                try {
+                    ConnectionProfiles.loadWithStatus(
+                        this@DadwayVpnService,
+                        refresh = true,
+                        allowCachedOnNetworkError = false,
+                    )
+                } catch (error: SubscriptionAccessException) {
+                    LogStore.add(this@DadwayVpnService, "Подписка отозвана: ${error.message}")
+                    stopVpn(error.message ?: "Подписка недоступна")
+                    break
+                } catch (error: Throwable) {
+                    LogStore.add(this@DadwayVpnService, "Временная ошибка проверки подписки: ${error.message}")
+                }
+            }
+        }
+    }
+
     private fun stopVpn(finalStatus: String = "Отключено") {
         metricsJob?.cancel(); metricsJob = null
+        subscriptionValidationJob?.cancel(); subscriptionValidationJob = null
         runCatching { XrayBridge.stop() }
         runCatching { tun?.close() }; tun = null
         AppState.update { UiState(status = finalStatus) }

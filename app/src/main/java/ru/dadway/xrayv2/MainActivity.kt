@@ -50,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var selectedName: TextView
     private lateinit var selectedStatus: TextView
     private var nodes: List<ServerNode> = emptyList()
+    private var serverListStatus = "Загрузка серверов…"
     private var serverSheet: BottomSheetDialog? = null
     private var autoTestJob: Job? = null
     private var wasRunning = false
@@ -141,14 +142,26 @@ class MainActivity : AppCompatActivity() {
         if (showFeedback) toast("Обновляем список серверов…")
         selectedStatus.text = "Проверка доступности…"
         runCatching {
-            val loaded = withContext(Dispatchers.IO) { ConnectionProfiles.load(this@MainActivity, true) }
-            ServerAvailabilityChecker.checkAll(loaded)
+            val loaded = withContext(Dispatchers.IO) { ConnectionProfiles.loadWithStatus(this@MainActivity, true) }
+            loaded.copy(nodes = ServerAvailabilityChecker.checkAll(loaded.nodes))
         }.onSuccess {
-            nodes = it
+            nodes = it.nodes
+            serverListStatus = if (it.fromCache) {
+                "Нет связи с сервером • показан сохранённый список"
+            } else {
+                "Обновлено только что • ${nodes.size} серверов"
+            }
             renderSelectedServer()
             serverSheet?.let { dialog -> renderServerSheet(dialog) }
-            if (showFeedback) toast("Список серверов обновлён")
+            if (showFeedback) toast(if (it.fromCache) "Нет связи: показан сохранённый список" else "Список серверов обновлён")
         }.onFailure {
+            if (it is SubscriptionAccessException) {
+                nodes = emptyList()
+                serverListStatus = it.message ?: "Подписка недоступна"
+                selectedName.text = "Подписка недоступна"
+                server.text = "—"
+                serverSheet?.let { dialog -> renderServerSheet(dialog) }
+            }
             selectedStatus.text = "Не удалось загрузить серверы"
             toast("Ошибка подписки: ${it.message}")
             LogStore.add(this@MainActivity, "Ошибка обновления подписки: ${it.message}")
@@ -186,10 +199,10 @@ class MainActivity : AppCompatActivity() {
         val updated = dialog.findViewById<TextView>(R.id.serversUpdatedText)
         list.removeAllViews()
         if (nodes.isEmpty()) {
-            updated?.text = "Загрузка серверов…"
+            updated?.text = serverListStatus
             return
         }
-        updated?.text = "Обновлено только что • ${nodes.size} серверов"
+        updated?.text = serverListStatus
         val selectedId = ConnectionProfiles.selected(this, nodes).id
         nodes.forEach { node ->
             val item = LayoutInflater.from(this).inflate(R.layout.item_server, list, false)
