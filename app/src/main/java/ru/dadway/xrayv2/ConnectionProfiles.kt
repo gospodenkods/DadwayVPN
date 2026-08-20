@@ -1,7 +1,6 @@
 package ru.dadway.xrayv2
 
 import android.content.Context
-import java.io.IOException
 
 data class SubscriptionLoadResult(
     val nodes: List<ServerNode>,
@@ -9,10 +8,7 @@ data class SubscriptionLoadResult(
 )
 
 object ConnectionProfiles {
-    const val SUBSCRIPTION_URL =
-        "https://devel.dadway.ru/sub/zpp#dadway.ru"
     private const val PREFS = "dadway_servers"
-    private const val CACHE_KEY = "dadway_subscription_zpp_test_text"
     private const val KEY_SELECTED = "selected_server_id"
 
     fun loadWithStatus(
@@ -20,26 +16,26 @@ object ConnectionProfiles {
         refresh: Boolean = true,
         allowCachedOnNetworkError: Boolean = true,
     ): SubscriptionLoadResult {
-        var fromCache = false
-        val text = if (refresh) {
-            try {
-                SubscriptionClient.fetch(context, SUBSCRIPTION_URL, CACHE_KEY)
-            } catch (error: SubscriptionAccessException) {
-                clear(context)
-                throw error
-            } catch (error: IOException) {
-                if (!allowCachedOnNetworkError) throw error
-                fromCache = true
-                SubscriptionClient.cached(context, CACHE_KEY) ?: throw error
-            }
-        } else {
-            SubscriptionClient.cached(context, CACHE_KEY)
-                ?: SubscriptionClient.fetch(context, SUBSCRIPTION_URL, CACHE_KEY)
-        }
-        val nodes = ServerNodeParser.parseSubscription(text).also {
-            require(it.isNotEmpty()) { "Подписка не содержит поддерживаемых серверов" }
-        }
-        return SubscriptionLoadResult(nodes, fromCache)
+        val sources = SubscriptionStore.all(context).filter(SubscriptionSource::enabled)
+        require(sources.isNotEmpty()) { "Нет активных подписок. Включите или добавьте подписку в настройках" }
+        var usedCache = false
+        var lastError: Throwable? = null
+        val nodes = sources.flatMap { source ->
+            val cacheKey = SubscriptionStore.cacheKey(source)
+            val text = runCatching {
+                if (refresh) SubscriptionClient.fetch(context, source.url, cacheKey)
+                else SubscriptionClient.cached(context, cacheKey)
+                    ?: SubscriptionClient.fetch(context, source.url, cacheKey)
+            }.recoverCatching { error ->
+                lastError = error
+                if (!allowCachedOnNetworkError || error is SubscriptionAccessException) throw error
+                usedCache = true
+                SubscriptionClient.cached(context, cacheKey) ?: throw error
+            }.getOrNull() ?: return@flatMap emptyList()
+            ServerNodeParser.parseSubscription(text, source.id)
+        }.distinctBy(ServerNode::id)
+        if (nodes.isEmpty()) throw lastError ?: IllegalArgumentException("Активные подписки не содержат поддерживаемых серверов")
+        return SubscriptionLoadResult(nodes, usedCache)
     }
 
     fun load(context: Context, refresh: Boolean = true): List<ServerNode> =
@@ -56,7 +52,7 @@ object ConnectionProfiles {
     }
 
     fun clear(context: Context) {
-        SubscriptionClient.clear(context, CACHE_KEY)
+        SubscriptionStore.all(context).forEach { SubscriptionClient.clear(context, SubscriptionStore.cacheKey(it)) }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(KEY_SELECTED).apply()
     }
 

@@ -22,8 +22,8 @@ android {
         applicationId = "ru.dadway.xrayv2"
         minSdk = 23
         targetSdk = 35
-        versionCode = 136
-        versionName = "8.4.9-test-zpp-arm"
+        versionCode = 137
+        versionName = "8.5.0-test-multisub-arm"
         ndk {
             abiFilters += setOf("arm64-v8a", "armeabi-v7a")
         }

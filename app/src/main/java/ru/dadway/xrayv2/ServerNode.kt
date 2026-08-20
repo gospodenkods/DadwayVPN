@@ -10,6 +10,7 @@ data class ServerNode(
     val host: String,
     val port: Int,
     val country: Country,
+    val subscriptionId: String? = null,
     val availability: Availability = Availability.Unknown
 )
 
@@ -29,12 +30,13 @@ sealed interface Availability {
 }
 
 object ServerNodeParser {
-    fun parseSubscription(text: String): List<ServerNode> = text
+    fun parseSubscription(text: String, subscriptionId: String? = null): List<ServerNode> = text
         .lineSequence()
         .map(String::trim)
         .filter { it.startsWith("vless://", true) || it.startsWith("vmess://", true) ||
             it.startsWith("trojan://", true) || it.startsWith("ss://", true) }
         .mapNotNull(::parse)
+        .map { it.copy(subscriptionId = subscriptionId) }
         .distinctBy(ServerNode::id)
         .toList()
 

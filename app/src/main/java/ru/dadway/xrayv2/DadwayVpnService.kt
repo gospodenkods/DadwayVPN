@@ -63,7 +63,7 @@ class DadwayVpnService : VpnService() {
                 AppState.update { it.copy(running = true, status = "Подключено", server = activeServer.name) }
                 updateNotification("Подключено: ${activeServer.name}")
                 startMetrics()
-                startSubscriptionValidation()
+                startSubscriptionValidation(activeServer.id)
             } catch (t: Throwable) {
                 LogStore.add(this@DadwayVpnService, "Ошибка запуска: ${t.stackTraceToString()}")
                 stopVpn("Ошибка: ${t.message ?: "не удалось подключиться"}")
@@ -87,17 +87,22 @@ class DadwayVpnService : VpnService() {
         }
     }
 
-    private fun startSubscriptionValidation() {
+    private fun startSubscriptionValidation(activeServerId: String) {
         subscriptionValidationJob?.cancel()
         subscriptionValidationJob = scope.launch {
             while (isActive) {
                 delay(60_000)
                 try {
-                    ConnectionProfiles.loadWithStatus(
+                    val refreshed = ConnectionProfiles.loadWithStatus(
                         this@DadwayVpnService,
                         refresh = true,
                         allowCachedOnNetworkError = false,
                     )
+                    if (refreshed.nodes.none { it.id == activeServerId }) {
+                        LogStore.add(this@DadwayVpnService, "Активный сервер больше не входит в подписки")
+                        stopVpn("Активная подписка отключена или отозвана")
+                        break
+                    }
                 } catch (error: SubscriptionAccessException) {
                     LogStore.add(this@DadwayVpnService, "Подписка отозвана: ${error.message}")
                     stopVpn(error.message ?: "Подписка недоступна")
