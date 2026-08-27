@@ -22,8 +22,8 @@ android {
         applicationId = "ru.dadway.xrayv2"
         minSdk = 23
         targetSdk = 35
-        versionCode = 138
-        versionName = "8.5.1-test-fix-optimized"
+        versionCode = 139
+        versionName = "8.5.2-test-final-subscription"
         resourceConfigurations += setOf("ru", "en")
     }
 
