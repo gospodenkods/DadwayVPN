@@ -14,22 +14,35 @@ data class SubscriptionSource(
     val title: String
         get() = runCatching {
             val parsed = URL(url)
-            "${parsed.host}${parsed.path}".removeSuffix("/")
+            val segments = parsed.path.split('/').filter(String::isNotBlank)
+            val safePath = when {
+                segments.isEmpty() -> ""
+                segments.size <= 2 || segments.first().equals("sub", true) ->
+                    "/${segments.joinToString("/")}"
+                else -> "/${segments.dropLast(1).joinToString("/")}/…${segments.last().takeLast(4)}"
+            }
+            "${parsed.host}$safePath"
         }.getOrDefault(url)
 }
 
 object SubscriptionStore {
     private const val PREFS = "dadway_subscriptions"
     private const val KEY_SOURCES = "sources_v1"
-    private const val DEFAULT_URL = "https://devel.dadway.ru/sub/zpp#dadway.ru"
+    private const val KEY_DEFAULTS_VERSION = "defaults_version"
+    private const val DEFAULTS_VERSION = 2
+    private const val DEFAULT_ZPP_URL = "https://devel.dadway.ru/sub/zpp#dadway.ru"
+    private const val DEFAULT_GERMANY_URL = "https://mikrot.icu/api/v1/59tgdq7kbn6phjzx"
 
     fun all(context: Context): List<SubscriptionSource> {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val saved = prefs.getString(KEY_SOURCES, null)
         if (saved.isNullOrBlank()) {
-            return listOf(SubscriptionSource("default-zpp", DEFAULT_URL, true)).also { save(context, it) }
+            return defaultSources().also {
+                save(context, it)
+                prefs.edit().putInt(KEY_DEFAULTS_VERSION, DEFAULTS_VERSION).apply()
+            }
         }
-        return runCatching {
+        val sources = runCatching {
             val array = JSONArray(saved)
             buildList {
                 for (index in 0 until array.length()) {
@@ -38,8 +51,18 @@ object SubscriptionStore {
                 }
             }
         }.getOrElse {
-            listOf(SubscriptionSource("default-zpp", DEFAULT_URL, true)).also { save(context, it) }
+            defaultSources().also { save(context, it) }
         }
+        if (prefs.getInt(KEY_DEFAULTS_VERSION, 1) >= DEFAULTS_VERSION) return sources
+
+        val migrated = if (sources.none { it.url.equals(DEFAULT_GERMANY_URL, true) }) {
+            sources + SubscriptionSource("default-germany-1", DEFAULT_GERMANY_URL, true)
+        } else {
+            sources
+        }
+        save(context, migrated)
+        prefs.edit().putInt(KEY_DEFAULTS_VERSION, DEFAULTS_VERSION).apply()
+        return migrated
     }
 
     fun add(context: Context, url: String): SubscriptionSource {
@@ -78,4 +101,9 @@ object SubscriptionStore {
         }
         return trimmed
     }
+
+    private fun defaultSources() = listOf(
+        SubscriptionSource("default-zpp", DEFAULT_ZPP_URL, true),
+        SubscriptionSource("default-germany-1", DEFAULT_GERMANY_URL, true),
+    )
 }

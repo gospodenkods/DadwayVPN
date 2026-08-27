@@ -22,11 +22,9 @@ android {
         applicationId = "ru.dadway.xrayv2"
         minSdk = 23
         targetSdk = 35
-        versionCode = 137
-        versionName = "8.5.0-test-multisub-arm"
-        ndk {
-            abiFilters += setOf("arm64-v8a", "armeabi-v7a")
-        }
+        versionCode = 138
+        versionName = "8.5.1-test-fix-optimized"
+        resourceConfigurations += setOf("ru", "en")
     }
 
     signingConfigs {
@@ -46,11 +44,21 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("dadwayRelease")
             }
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = false
         }
     }
 

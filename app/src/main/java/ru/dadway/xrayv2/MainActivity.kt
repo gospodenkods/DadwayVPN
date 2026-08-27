@@ -34,6 +34,8 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import kotlinx.coroutines.*
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
@@ -51,6 +53,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var selectedCard: View
     private lateinit var selectedFlag: ImageView
     private lateinit var selectedName: TextView
+    private lateinit var selectedSource: TextView
     private lateinit var selectedStatus: TextView
     private var nodes: List<ServerNode> = emptyList()
     private var serverListStatus = "Загрузка серверов…"
@@ -65,7 +68,7 @@ class MainActivity : AppCompatActivity() {
     private val saveLog = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         if (uri != null) runCatching {
             contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
-                writer.write("Dadway VPN 8.3 log export\n\n" + LogStore.read(this))
+                writer.write(logExportText())
             }
         }.onSuccess { toast("Лог сохранён") }.onFailure { toast("Ошибка: ${it.message}") }
     }
@@ -94,7 +97,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.testButton).setOnClickListener { testConnection() }
         findViewById<MaterialButton>(R.id.ipButton).setOnClickListener { testConnection() }
         findViewById<MaterialButton>(R.id.saveLogsButton).setOnClickListener {
-            saveLog.launch("dadway-vpn-8.3-${System.currentTimeMillis()}.txt")
+            val version = BuildConfig.VERSION_NAME.replace(Regex("[^A-Za-z0-9._-]"), "_")
+            saveLog.launch("dadway-vpn-$version-${System.currentTimeMillis()}.txt")
         }
         findViewById<MaterialButton>(R.id.settingsButton).setOnClickListener { showSettings() }
 
@@ -122,6 +126,7 @@ class MainActivity : AppCompatActivity() {
         selectedCard = findViewById(R.id.selectedServerCard)
         selectedFlag = findViewById(R.id.selectedServerFlag)
         selectedName = findViewById(R.id.selectedServerName)
+        selectedSource = findViewById(R.id.selectedServerSource)
         selectedStatus = findViewById(R.id.selectedServerStatus)
     }
 
@@ -161,6 +166,7 @@ class MainActivity : AppCompatActivity() {
             nodes = emptyList()
             serverListStatus = it.message ?: "Подписки недоступны"
             selectedName.text = "Нет доступных серверов"
+            selectedSource.text = "Проверьте активные подписки"
             server.text = "—"
             serverSheet?.let { dialog -> renderServerSheet(dialog) }
             selectedStatus.text = "Не удалось загрузить серверы"
@@ -210,6 +216,7 @@ class MainActivity : AppCompatActivity() {
             val available = node.availability !is Availability.Unavailable
             item.findViewById<ImageView>(R.id.serverFlag).setImageResource(flagFor(node.country))
             item.findViewById<TextView>(R.id.serverName).text = node.name
+            item.findViewById<TextView>(R.id.serverSource).text = "Источник: ${node.subscriptionTitle ?: "не указан"}"
             val availability = item.findViewById<TextView>(R.id.serverAvailability)
             val latency = item.findViewById<TextView>(R.id.serverLatency)
             when (val state = node.availability) {
@@ -247,6 +254,7 @@ class MainActivity : AppCompatActivity() {
         val node = ConnectionProfiles.selected(this, nodes)
         selectedFlag.setImageResource(flagFor(node.country))
         selectedName.text = node.name
+        selectedSource.text = "Источник: ${node.subscriptionTitle ?: "не указан"}"
         server.text = node.name
         when (val state = node.availability) {
             is Availability.Available -> {
@@ -486,6 +494,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun openExternal(url: String) = runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
         .onFailure { toast("Не удалось открыть ссылку") }
+    private fun logExportText() = buildString {
+        appendLine("Dadway VPN log export")
+        appendLine("Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+        appendLine("Package: $packageName")
+        appendLine("Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
+        appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL}")
+        appendLine("ABI: ${Build.SUPPORTED_ABIS.joinToString()}")
+        appendLine("Exported: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.US).format(Date())}")
+        appendLine()
+        append(LogStore.read(this@MainActivity))
+    }
     private fun formatRate(value: Long) = "${formatBytes(value)}/с"
     private fun formatBytes(value: Long): String = when {
         value >= 1_073_741_824 -> String.format(Locale.US, "%.2f ГБ", value / 1_073_741_824.0)

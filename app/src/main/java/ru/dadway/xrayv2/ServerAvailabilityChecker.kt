@@ -11,8 +11,15 @@ import kotlin.system.measureTimeMillis
 
 object ServerAvailabilityChecker {
     suspend fun checkAll(nodes: List<ServerNode>): List<ServerNode> = coroutineScope {
-        nodes.map { node -> async(Dispatchers.IO) { node.copy(availability = check(node)) } }.awaitAll()
+        val availabilityByEndpoint = nodes
+            .distinctBy(::endpointKey)
+            .map { node -> async(Dispatchers.IO) { endpointKey(node) to check(node) } }
+            .awaitAll()
+            .toMap()
+        nodes.map { node -> node.copy(availability = availabilityByEndpoint.getValue(endpointKey(node))) }
     }
+
+    private fun endpointKey(node: ServerNode) = "${node.host.lowercase()}:${node.port}"
 
     private suspend fun check(node: ServerNode): Availability = withContext(Dispatchers.IO) {
         runCatching {

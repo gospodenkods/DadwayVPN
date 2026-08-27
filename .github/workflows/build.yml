@@ -63,10 +63,13 @@ jobs:
           gradle --no-daemon clean assembleRelease --stacktrace 2>&1 | tee build.log
       - name: Collect APK
         if: success()
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p output
-          cp app/build/outputs/apk/release/app-release.apk output/DadwayVPN-v8.5.0-test-multisub-arm-release.apk
-          sha256sum output/DadwayVPN-v8.5.0-test-multisub-arm-release.apk > output/DadwayVPN-v8.5.0-test-multisub-arm-release.apk.sha256
+          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk output/DadwayVPN-v8.5.1-test-fix-optimized-arm64-v8a.apk
+          cp app/build/outputs/apk/release/app-armeabi-v7a-release.apk output/DadwayVPN-v8.5.1-test-fix-optimized-armeabi-v7a.apk
+          (cd output && sha256sum *.apk > SHA256SUMS.txt)
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4

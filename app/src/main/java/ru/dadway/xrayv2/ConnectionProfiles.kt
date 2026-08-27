@@ -32,7 +32,7 @@ object ConnectionProfiles {
                 usedCache = true
                 SubscriptionClient.cached(context, cacheKey) ?: throw error
             }.getOrNull() ?: return@flatMap emptyList()
-            ServerNodeParser.parseSubscription(text, source.id)
+            ServerNodeParser.parseSubscription(text, source)
         }.distinctBy(ServerNode::id)
         if (nodes.isEmpty()) throw lastError ?: IllegalArgumentException("Активные подписки не содержат поддерживаемых серверов")
         return SubscriptionLoadResult(nodes, usedCache)
@@ -43,7 +43,12 @@ object ConnectionProfiles {
 
     fun selected(context: Context, nodes: List<ServerNode> = load(context, false)): ServerNode {
         val id = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_SELECTED, null)
-        return nodes.firstOrNull { it.id == id } ?: nodes.first()
+        return nodes.firstOrNull { it.id == id }
+            // Migrate selections saved before server IDs became source-aware.
+            ?: nodes.firstOrNull { it.legacyId == id }
+            // Preserve a renamed node when the subscription still points to the same endpoint.
+            ?: nodes.firstOrNull { id?.startsWith("${it.host}:${it.port}:", ignoreCase = true) == true }
+            ?: nodes.first()
     }
 
     fun select(context: Context, node: ServerNode) {
@@ -60,6 +65,14 @@ object ConnectionProfiles {
         val nodes = loadWithStatus(context, refresh = true, allowCachedOnNetworkError = false).nodes
         val node = selected(context, nodes)
         return node to node.link
+    }
+
+    fun validateSelectedSource(context: Context, node: ServerNode): Boolean {
+        val source = SubscriptionStore.all(context)
+            .firstOrNull { it.id == node.subscriptionId && it.enabled }
+            ?: return false
+        val text = SubscriptionClient.fetch(context, source.url, SubscriptionStore.cacheKey(source))
+        return ServerNodeParser.parseSubscription(text, source).any { it.id == node.id }
     }
 
     fun firstShareLink(text: String): String? = text.lineSequence().map(String::trim)

@@ -11,8 +11,16 @@ data class ServerNode(
     val port: Int,
     val country: Country,
     val subscriptionId: String? = null,
+    val subscriptionTitle: String? = null,
     val availability: Availability = Availability.Unknown
-)
+) {
+    val legacyId: String
+        get() = id.substringAfter(SOURCE_SEPARATOR, id)
+
+    companion object {
+        const val SOURCE_SEPARATOR = "|"
+    }
+}
 
 enum class Country(val displayName: String) {
     RUSSIA("Россия"),
@@ -30,13 +38,19 @@ sealed interface Availability {
 }
 
 object ServerNodeParser {
-    fun parseSubscription(text: String, subscriptionId: String? = null): List<ServerNode> = text
+    fun parseSubscription(text: String, source: SubscriptionSource? = null): List<ServerNode> = text
         .lineSequence()
         .map(String::trim)
         .filter { it.startsWith("vless://", true) || it.startsWith("vmess://", true) ||
             it.startsWith("trojan://", true) || it.startsWith("ss://", true) }
         .mapNotNull(::parse)
-        .map { it.copy(subscriptionId = subscriptionId) }
+        .map { node ->
+            node.copy(
+                id = source?.let { "${it.id}${ServerNode.SOURCE_SEPARATOR}${node.id}" } ?: node.id,
+                subscriptionId = source?.id,
+                subscriptionTitle = source?.title,
+            )
+        }
         .distinctBy(ServerNode::id)
         .toList()
 
@@ -55,7 +69,8 @@ object ServerNodeParser {
         val value = name.lowercase()
         return when {
             listOf("россия", "russia", "ru ", "🇷🇺").any(value::contains) -> Country.RUSSIA
-            listOf("германия", "germany", "de ", "🇩🇪").any(value::contains) -> Country.GERMANY
+            listOf("германия", "germany", "de ", "🇩🇪").any(value::contains) ||
+                GERMANY_SHORT_CODE.containsMatchIn(value) -> Country.GERMANY
             listOf("сша", "usa", "united states", "us ", "🇺🇸").any(value::contains) -> Country.USA
             listOf("нидерланды", "netherlands", "holland", "nl ", "🇳🇱").any(value::contains) -> Country.NETHERLANDS
             listOf("великобритания", "united kingdom", "great britain", "uk ", "gb ", "🇬🇧").any(value::contains) -> Country.UNITED_KINGDOM
@@ -67,4 +82,6 @@ object ServerNodeParser {
         "trojan" -> 443
         else -> -1
     }
+
+    private val GERMANY_SHORT_CODE = Regex("(?:^|[-_\\s])(?:de|ge)\\s*(?:№|#)?\\s*\\d+$")
 }

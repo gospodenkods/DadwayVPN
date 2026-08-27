@@ -20,6 +20,7 @@ class DadwayVpnService : VpnService() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var tun: ParcelFileDescriptor? = null
+    private var startJob: Job? = null
     private var metricsJob: Job? = null
     private var subscriptionValidationJob: Job? = null
 
@@ -28,7 +29,11 @@ class DadwayVpnService : VpnService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> stopVpn()
-            else -> if (!AppState.current.running) startVpn()
+            else -> if (!AppState.current.running && startJob?.isActive != true) {
+                startVpn()
+            } else {
+                LogStore.add(this, "Повторная команда запуска проигнорирована")
+            }
         }
         return START_STICKY
     }
@@ -36,10 +41,15 @@ class DadwayVpnService : VpnService() {
     private fun startVpn() {
         startForeground(NOTIFICATION_ID, notification("Подключение…"))
         AppState.update { it.copy(status = "Подключение…") }
-        scope.launch {
+        startJob = scope.launch {
             try {
                 val (activeServer, link) = ConnectionProfiles.connectionText(this@DadwayVpnService)
-                LogStore.add(this@DadwayVpnService, "Выбран сервер: ${activeServer.name}")
+                ensureActive()
+                LogStore.add(
+                    this@DadwayVpnService,
+                    "Выбран сервер: ${activeServer.name}; источник=${activeServer.subscriptionTitle ?: "не указан"}; " +
+                        "адрес=${activeServer.host}:${activeServer.port}",
+                )
 
                 tun = Builder()
                     .setSession("Dadway VPN")
@@ -49,6 +59,7 @@ class DadwayVpnService : VpnService() {
                     .addDnsServer("1.1.1.1")
                     .addDisallowedApplication(packageName)
                     .establish() ?: error("Android не создал VPN-интерфейс")
+                ensureActive()
 
                 val base = XrayBridge.linksToConfig(link)
                 val built = XrayConfigBuilder.build(
@@ -57,16 +68,25 @@ class DadwayVpnService : VpnService() {
                     filesDir = filesDir.absolutePath,
                     sourceLink = link
                 )
-                LogStore.add(this@DadwayVpnService, "Запуск VPN: узел=${activeServer.name}, протокол=${built.protocol}, сервер=${built.server}")
+                LogStore.add(
+                    this@DadwayVpnService,
+                    "Запуск VPN: узел=${activeServer.name}, протокол=${built.protocol}, " +
+                        "сервер=${built.server}, источник=${activeServer.subscriptionTitle ?: "не указан"}",
+                )
                 XrayBridge.run(built.json)
 
                 AppState.update { it.copy(running = true, status = "Подключено", server = activeServer.name) }
                 updateNotification("Подключено: ${activeServer.name}")
                 startMetrics()
-                startSubscriptionValidation(activeServer.id)
+                startSubscriptionValidation(activeServer)
+            } catch (cancelled: CancellationException) {
+                LogStore.add(this@DadwayVpnService, "Запуск VPN отменён")
+                throw cancelled
             } catch (t: Throwable) {
                 LogStore.add(this@DadwayVpnService, "Ошибка запуска: ${t.stackTraceToString()}")
                 stopVpn("Ошибка: ${t.message ?: "не удалось подключиться"}")
+            } finally {
+                startJob = null
             }
         }
     }
@@ -87,34 +107,36 @@ class DadwayVpnService : VpnService() {
         }
     }
 
-    private fun startSubscriptionValidation(activeServerId: String) {
+    private fun startSubscriptionValidation(activeServer: ServerNode) {
         subscriptionValidationJob?.cancel()
         subscriptionValidationJob = scope.launch {
+            var lastTransientError: String? = null
             while (isActive) {
                 delay(60_000)
                 try {
-                    val refreshed = ConnectionProfiles.loadWithStatus(
-                        this@DadwayVpnService,
-                        refresh = true,
-                        allowCachedOnNetworkError = false,
-                    )
-                    if (refreshed.nodes.none { it.id == activeServerId }) {
+                    if (!ConnectionProfiles.validateSelectedSource(this@DadwayVpnService, activeServer)) {
                         LogStore.add(this@DadwayVpnService, "Активный сервер больше не входит в подписки")
                         stopVpn("Активная подписка отключена или отозвана")
                         break
                     }
+                    lastTransientError = null
                 } catch (error: SubscriptionAccessException) {
                     LogStore.add(this@DadwayVpnService, "Подписка отозвана: ${error.message}")
                     stopVpn(error.message ?: "Подписка недоступна")
                     break
                 } catch (error: Throwable) {
-                    LogStore.add(this@DadwayVpnService, "Временная ошибка проверки подписки: ${error.message}")
+                    val message = error.message ?: error.javaClass.simpleName
+                    if (message != lastTransientError) {
+                        LogStore.add(this@DadwayVpnService, "Временная ошибка проверки подписки: $message")
+                        lastTransientError = message
+                    }
                 }
             }
         }
     }
 
     private fun stopVpn(finalStatus: String = "Отключено") {
+        startJob?.cancel(); startJob = null
         metricsJob?.cancel(); metricsJob = null
         subscriptionValidationJob?.cancel(); subscriptionValidationJob = null
         runCatching { XrayBridge.stop() }

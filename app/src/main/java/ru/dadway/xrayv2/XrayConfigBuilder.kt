@@ -88,7 +88,9 @@ object XrayConfigBuilder {
 
         return Built(
             json = base.toString(),
-            server = extractServer(proxy),
+            server = extractServer(proxy).takeUnless { it == proxyTag }
+                ?: sourceLink?.let(::extractSourceEndpoint)
+                ?: proxyTag,
             protocol = proxy.optString("protocol", "unknown")
         )
     }
@@ -251,4 +253,11 @@ object XrayConfigBuilder {
         if (servers != null) return "${servers.optString("address")}:${servers.optInt("port")}" 
         return o.optString("tag", "proxy")
     }
+
+    private fun extractSourceEndpoint(link: String): String? = runCatching {
+        val uri = URI(link)
+        val host = uri.host?.takeIf(String::isNotBlank) ?: return@runCatching null
+        val port = uri.port.takeIf { it > 0 } ?: return@runCatching null
+        "$host:$port"
+    }.getOrNull()
 }
