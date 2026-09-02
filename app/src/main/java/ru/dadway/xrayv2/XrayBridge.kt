@@ -1,10 +1,29 @@
 package ru.dadway.xrayv2
 
+import libXray.DialerController
 import libXray.LibXray
 import org.json.JSONObject
 
 object XrayBridge {
     data class Response(val success: Boolean, val data: Any?, val error: String)
+
+    private val lifecycle = XrayLifecycle<DialerController>(
+        setDns = { controller ->
+            LibXray.setDNS(controller, XrayConfigBuilder.LIBXRAY_DNS_ENDPOINT)
+        },
+        resetDns = LibXray::resetDNS,
+        startCore = { configJson ->
+            val response = invoke(
+                "runXrayFromJson",
+                JSONObject().put("configJSON", configJson),
+            )
+            check(response.success) { response.error }
+        },
+        stopCore = {
+            val response = invoke("stopXray")
+            check(response.success) { response.error }
+        },
+    )
 
     fun invoke(method: String, payload: JSONObject = JSONObject()): Response {
         val request = JSONObject().put("apiVersion", 1).put("method", method).put("payload", payload)
@@ -24,11 +43,9 @@ object XrayBridge {
         return JSONObject(configText)
     }
 
-    fun run(configJson: String) {
-        val r = invoke("runXrayFromJson", JSONObject().put("configJSON", configJson))
-        check(r.success) { r.error }
-    }
+    fun run(configJson: String, controller: DialerController) = lifecycle.start(configJson, controller)
 
-    fun stop() { invoke("stopXray") }
+    fun stop() = lifecycle.stop()
+    fun isRunning(): Boolean = lifecycle.isRunning()
     fun version(): String = invoke("xrayVersion").data?.toString() ?: "unknown"
 }

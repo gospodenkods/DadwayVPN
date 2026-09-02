@@ -34,12 +34,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git clone --depth 1 --branch v26.7.11 https://github.com/XTLS/libXray.git .ci-libxray
+          git clone --depth 1 --branch v26.7.28 https://github.com/XTLS/libXray.git .ci-libxray
           cd .ci-libxray
           python3 build/main.py android 2>&1 | tee ../libxray-build.log
           test -f libXray.aar
           mkdir -p ../app/libs
           cp libXray.aar ../app/libs/libXray.aar
+          unzip -p ../app/libs/libXray.aar classes.jar > "$RUNNER_TEMP/libxray-classes.jar"
+          javap -classpath "$RUNNER_TEMP/libxray-classes.jar" libXray.LibXray | tee ../libxray-api.txt
+          grep -q 'setDNS(libXray.DialerController, java.lang.String)' ../libxray-api.txt
+          grep -q 'resetDNS()' ../libxray-api.txt
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: "8.10.2"
@@ -60,15 +64,15 @@ jobs:
           DADWAY_KEY_PASSWORD: ${{ secrets.DADWAY_KEY_PASSWORD }}
         run: |
           set -o pipefail
-          gradle --no-daemon clean assembleRelease --stacktrace 2>&1 | tee build.log
+          gradle --no-daemon clean testReleaseUnitTest assembleRelease --stacktrace 2>&1 | tee build.log
       - name: Collect APK
         if: success()
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p output
-          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk output/DadwayVPN-v8.5.2-test-final-subscription-arm64-v8a.apk
-          cp app/build/outputs/apk/release/app-armeabi-v7a-release.apk output/DadwayVPN-v8.5.2-test-final-subscription-armeabi-v7a.apk
+          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk output/DadwayVPN-v8.5.3-test-libxray-dns-arm64-v8a.apk
+          cp app/build/outputs/apk/release/app-armeabi-v7a-release.apk output/DadwayVPN-v8.5.3-test-libxray-dns-armeabi-v7a.apk
           (cd output && sha256sum *.apk > SHA256SUMS.txt)
       - name: Upload APK
         if: success()
@@ -85,5 +89,6 @@ jobs:
           path: |
             build.log
             libxray-build.log
+            libxray-api.txt
           if-no-files-found: warn
           retention-days: 14

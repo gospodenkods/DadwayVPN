@@ -9,6 +9,8 @@ import java.nio.charset.StandardCharsets
 object XrayConfigBuilder {
     const val SOCKS_PORT = 10808
     const val METRICS_PORT = 49227
+    const val VPN_DNS_SERVER = "1.1.1.1"
+    const val LIBXRAY_DNS_ENDPOINT = "1.1.1.1:53"
 
     data class Built(val json: String, val server: String, val protocol: String)
 
@@ -46,7 +48,7 @@ object XrayConfigBuilder {
             .put("xray.location.asset", filesDir)
             .put("xray.location.cert", filesDir))
 
-        base.put("dns", JSONObject().put("servers", JSONArray().put("1.1.1.1").put("8.8.8.8")))
+        base.put("dns", JSONObject().put("servers", JSONArray().put(VPN_DNS_SERVER).put("8.8.8.8")))
 
         base.put("routing", JSONObject()
             .put("domainStrategy", "IPIfNonMatch")

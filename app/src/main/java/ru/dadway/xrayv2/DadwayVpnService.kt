@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.*
+import libXray.DialerController
 
 class DadwayVpnService : VpnService() {
     companion object {
@@ -23,6 +24,10 @@ class DadwayVpnService : VpnService() {
     private var startJob: Job? = null
     private var metricsJob: Job? = null
     private var subscriptionValidationJob: Job? = null
+    private val dialerController = object : DialerController {
+        override fun protectFd(fd: Long): Boolean =
+            this@DadwayVpnService.protect(fd.toInt())
+    }
 
     override fun onCreate() { super.onCreate(); createChannel() }
 
@@ -56,7 +61,7 @@ class DadwayVpnService : VpnService() {
                     .setMtu(1500)
                     .addAddress("172.19.0.1", 30)
                     .addRoute("0.0.0.0", 0)
-                    .addDnsServer("1.1.1.1")
+                    .addDnsServer(XrayConfigBuilder.VPN_DNS_SERVER)
                     .addDisallowedApplication(packageName)
                     .establish() ?: error("Android не создал VPN-интерфейс")
                 ensureActive()
@@ -73,7 +78,11 @@ class DadwayVpnService : VpnService() {
                     "Запуск VPN: узел=${activeServer.name}, протокол=${built.protocol}, " +
                         "сервер=${built.server}, источник=${activeServer.subscriptionTitle ?: "не указан"}",
                 )
-                XrayBridge.run(built.json)
+                ensureActive()
+                XrayBridge.run(built.json, dialerController)
+                ConnectionTester.awaitProxyReady()
+                ensureActive()
+                LogStore.add(this@DadwayVpnService, "Локальный SOCKS-прокси 127.0.0.1:${XrayConfigBuilder.SOCKS_PORT} готов")
 
                 AppState.update { it.copy(running = true, status = "Подключено", server = activeServer.name) }
                 updateNotification("Подключено: ${activeServer.name}")
