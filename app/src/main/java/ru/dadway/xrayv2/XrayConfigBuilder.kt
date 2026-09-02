@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets
 object XrayConfigBuilder {
     const val SOCKS_PORT = 10808
     const val METRICS_PORT = 49227
+    const val TUN_INTERFACE_NAME = "xray0"
     const val VPN_DNS_SERVER = "1.1.1.1"
     const val LIBXRAY_DNS_ENDPOINT = "1.1.1.1:53"
 
@@ -35,7 +36,13 @@ object XrayConfigBuilder {
                 .put("tag", "tun-in")
                 .put("protocol", "tun")
                 .put("port", 0)
-                .put("settings", JSONObject().put("mtu", 1500)))
+                .put("settings", JSONObject()
+                    // Xray-core 26.7.28 probes net.Interfaces() when name is
+                    // empty. Android 16 denies that netlink request. The TUN
+                    // fd is supplied by VpnService, so retain the explicit
+                    // name used by the previously working core release.
+                    .put("name", TUN_INTERFACE_NAME)
+                    .put("mtu", 1500)))
             .put(JSONObject()
                 .put("tag", "socks-in")
                 .put("listen", "127.0.0.1")

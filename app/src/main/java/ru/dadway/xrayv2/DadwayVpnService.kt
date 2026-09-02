@@ -93,7 +93,7 @@ class DadwayVpnService : VpnService() {
                 throw cancelled
             } catch (t: Throwable) {
                 LogStore.add(this@DadwayVpnService, "Ошибка запуска: ${t.stackTraceToString()}")
-                stopVpn("Ошибка: ${t.message ?: "не удалось подключиться"}")
+                stopVpn(userFacingStartError(t))
             } finally {
                 startJob = null
             }
@@ -158,6 +158,18 @@ class DadwayVpnService : VpnService() {
 
     override fun onRevoke() { stopVpn(); super.onRevoke() }
     override fun onDestroy() { scope.cancel(); runCatching { XrayBridge.stop() }; runCatching { tun?.close() }; super.onDestroy() }
+
+    private fun userFacingStartError(error: Throwable): String {
+        val message = error.message.orEmpty()
+        return when {
+            error is SubscriptionAccessException -> message.ifBlank { "Подписка недоступна" }
+            message.contains("netlinkrib", ignoreCase = true) -> "Не удалось настроить VPN-интерфейс Android"
+            message.contains("SOCKS-прокси", ignoreCase = true) -> "VPN-ядро не запустилось за 10 секунд"
+            message.length > 120 -> "Не удалось подключиться. Подробности доступны в журнале"
+            message.isNotBlank() -> "Ошибка: $message"
+            else -> "Не удалось подключиться"
+        }
+    }
 
     private fun notification(text: String) = NotificationCompat.Builder(this, CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_notification_vpn)

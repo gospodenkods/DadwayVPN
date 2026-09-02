@@ -22,8 +22,8 @@ android {
         applicationId = "ru.dadway.xrayv2"
         minSdk = 23
         targetSdk = 35
-        versionCode = 140
-        versionName = "8.5.3-test-libxray-dns"
+        versionCode = 141
+        versionName = "8.5.4-test-android16-tun"
         resourceConfigurations += setOf("ru", "en")
     }
 
@@ -79,4 +79,5 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

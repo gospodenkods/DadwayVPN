@@ -1,4 +1,4 @@
-# Dadway VPN v8.5.3
+# Dadway VPN v8.5.4
 
 Стабильная версия Android-клиента Dadway VPN на базе libXray.
 
@@ -13,6 +13,7 @@
 - исправленная очистка клиентской конфигурации REALITY;
 - удаление некорректного `sendThrough`, полученного из названия профиля;
 - локальный SOCKS5 и Android TUN;
+- совместимый с Android 16 TUN через переданный `VpnService` file descriptor;
 - защищённый DNS через официальный `LibXray.setDNS`;
 - ожидание готовности SOCKS5 до 10 секунд и три попытки проверки соединения;
 - защита от параллельного запуска экземпляров Xray;
@@ -22,8 +23,8 @@
 
 ## Версия
 
-- `versionCode`: 140
-- `versionName`: 8.5.3-test-libxray-dns
+- `versionCode`: 141
+- `versionName`: 8.5.4-test-android16-tun
 
 ## Сборка
 
