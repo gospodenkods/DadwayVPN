@@ -29,8 +29,7 @@ object SubscriptionStore {
     private const val PREFS = "dadway_subscriptions"
     private const val KEY_SOURCES = "sources_v1"
     private const val KEY_DEFAULTS_VERSION = "defaults_version"
-    private const val DEFAULTS_VERSION = 4
-    private val BUNDLED_SOURCE_IDS = setOf("default-promo", "default-zpp", "default-germany-1")
+    private const val DEFAULTS_VERSION = 5
 
     fun all(context: Context): List<SubscriptionSource> {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -52,11 +51,15 @@ object SubscriptionStore {
         }.getOrElse {
             emptyList<SubscriptionSource>().also { save(context, it) }
         }
-        if (prefs.getInt(KEY_DEFAULTS_VERSION, 1) >= DEFAULTS_VERSION) return sources
+        val storedVersion = prefs.getInt(KEY_DEFAULTS_VERSION, 1)
+        if (storedVersion >= DEFAULTS_VERSION) return sources
 
-        val bundled = sources.filter(::isBundledSource)
-        bundled.forEach { SubscriptionClient.clear(context, cacheKey(it)) }
-        val migrated = removeBundledSources(sources)
+        // Version 8.5.6 intentionally starts with an empty subscription list even
+        // when Android preserves data from an older APK. This is a one-time reset:
+        // sources added after the marker is written remain untouched on later starts.
+        sources.forEach { SubscriptionClient.clear(context, cacheKey(it)) }
+        ConnectionProfiles.clearSelection(context)
+        val migrated = sourcesAfterProductionReset(sources, storedVersion)
         save(context, migrated)
         prefs.edit().putInt(KEY_DEFAULTS_VERSION, DEFAULTS_VERSION).apply()
         return migrated
@@ -101,8 +104,8 @@ object SubscriptionStore {
 
     private fun defaultSources(): List<SubscriptionSource> = emptyList()
 
-    internal fun removeBundledSources(sources: List<SubscriptionSource>): List<SubscriptionSource> =
-        sources.filterNot(::isBundledSource)
-
-    private fun isBundledSource(source: SubscriptionSource): Boolean = source.id in BUNDLED_SOURCE_IDS
+    internal fun sourcesAfterProductionReset(
+        sources: List<SubscriptionSource>,
+        storedVersion: Int,
+    ): List<SubscriptionSource> = if (storedVersion < DEFAULTS_VERSION) emptyList() else sources
 }

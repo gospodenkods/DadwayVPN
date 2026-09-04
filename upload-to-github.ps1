@@ -42,7 +42,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if ($stagedFiles.Count -gt 0) {
-    Invoke-Git -Arguments @("commit", "-m", "Release Dadway VPN 8.5.5")
+    Invoke-Git -Arguments @("commit", "-m", "Release Dadway VPN 8.5.6")
 }
 else {
     Write-Host "No file changes to commit." -ForegroundColor Yellow

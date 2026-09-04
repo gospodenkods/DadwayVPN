@@ -1,4 +1,4 @@
-# Dadway VPN v8.5.5
+# Dadway VPN v8.5.6
 
 Стабильная версия Android-клиента Dadway VPN на базе libXray.
 
@@ -25,8 +25,8 @@
 
 ## Версия
 
-- `versionCode`: 142
-- `versionName`: 8.5.5
+- `versionCode`: 143
+- `versionName`: 8.5.6
 
 ## Сборка
 
