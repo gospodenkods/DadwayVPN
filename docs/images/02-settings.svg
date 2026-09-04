@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="980" viewBox="0 0 720 980" role="img" aria-labelledby="title desc">
+  <title id="title">Меню настроек Dadway VPN</title>
+  <desc id="desc">Выбор пункта Управление подписками.</desc>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071017"/><stop offset="1" stop-color="#16232c"/></linearGradient><filter id="s"><feDropShadow dx="0" dy="12" stdDeviation="18" flood-opacity=".45"/></filter></defs>
+  <rect width="720" height="980" rx="50" fill="url(#bg)"/>
+  <g font-family="Arial, sans-serif">
+    <text x="52" y="78" font-size="30" font-weight="700" fill="#e6b300">DADWAY <tspan fill="#ef3340">VPN</tspan></text>
+    <circle cx="360" cy="245" r="110" fill="#12212a" stroke="#e4b20a" stroke-width="7"/><text x="360" y="276" text-anchor="middle" font-size="92" font-weight="700" fill="#ffc400">D</text>
+    <rect x="64" y="368" width="592" height="430" rx="38" fill="#16242d" stroke="#41525c" stroke-width="2" filter="url(#s)"/>
+    <text x="104" y="432" font-size="34" font-weight="700" fill="#f6f8f9">Настройки</text>
+    <rect x="92" y="474" width="536" height="96" rx="28" fill="#22343e" stroke="#ffc400" stroke-width="4"/>
+    <circle cx="139" cy="522" r="24" fill="#ffc400"/><text x="139" y="531" text-anchor="middle" font-size="25" font-weight="700" fill="#12212a">☷</text>
+    <text x="186" y="532" font-size="25" font-weight="700" fill="#f6f8f9">Управление подписками</text>
+    <text x="598" y="533" text-anchor="middle" font-size="36" fill="#ffc400">›</text>
+    <rect x="92" y="590" width="536" height="88" rx="28" fill="#192831" stroke="#384a54" stroke-width="2"/>
+    <text x="137" y="645" text-anchor="middle" font-size="29" fill="#b9c3c9">☼</text><text x="186" y="643" font-size="24" fill="#f6f8f9">Тема оформления</text>
+    <line x1="92" y1="712" x2="628" y2="712" stroke="#31434d" stroke-width="2"/>
+    <text x="360" y="763" text-anchor="middle" font-size="22" fill="#b9c3c9">ЗАКРЫТЬ</text>
+    <path d="M360 895 C360 851 360 832 360 798" fill="none" stroke="#ffc400" stroke-width="10" stroke-linecap="round"/>
+    <path d="M339 823 L360 793 L381 823" fill="none" stroke="#ffc400" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="360" y="940" text-anchor="middle" font-size="24" font-weight="700" fill="#ffc400">2. Откройте управление подписками</text>
+  </g>
+</svg>

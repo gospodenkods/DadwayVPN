@@ -29,9 +29,8 @@ object SubscriptionStore {
     private const val PREFS = "dadway_subscriptions"
     private const val KEY_SOURCES = "sources_v1"
     private const val KEY_DEFAULTS_VERSION = "defaults_version"
-    private const val DEFAULTS_VERSION = 3
-    private const val DEFAULT_PROMO_URL =
-        "https://devel.dadway.ru/sub/promo#https%3A%2F%2Fdadway.ru"
+    private const val DEFAULTS_VERSION = 4
+    private val BUNDLED_SOURCE_IDS = setOf("default-promo", "default-zpp", "default-germany-1")
 
     fun all(context: Context): List<SubscriptionSource> {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -51,20 +50,13 @@ object SubscriptionStore {
                 }
             }
         }.getOrElse {
-            defaultSources().also { save(context, it) }
+            emptyList<SubscriptionSource>().also { save(context, it) }
         }
         if (prefs.getInt(KEY_DEFAULTS_VERSION, 1) >= DEFAULTS_VERSION) return sources
 
-        val obsolete = sources.filter(::isObsoleteOfficialSource)
-        obsolete.forEach { SubscriptionClient.clear(context, cacheKey(it)) }
-        val retained = sources.filterNot(::isObsoleteOfficialSource)
-        val migrated = if (retained.none { sameSubscriptionUrl(it.url, DEFAULT_PROMO_URL) }) {
-            listOf(SubscriptionSource("default-promo", DEFAULT_PROMO_URL, true)) + retained
-        } else {
-            retained.map { source ->
-                if (sameSubscriptionUrl(source.url, DEFAULT_PROMO_URL)) source.copy(enabled = true) else source
-            }
-        }
+        val bundled = sources.filter(::isBundledSource)
+        bundled.forEach { SubscriptionClient.clear(context, cacheKey(it)) }
+        val migrated = removeBundledSources(sources)
         save(context, migrated)
         prefs.edit().putInt(KEY_DEFAULTS_VERSION, DEFAULTS_VERSION).apply()
         return migrated
@@ -107,17 +99,10 @@ object SubscriptionStore {
         return trimmed
     }
 
-    private fun defaultSources() = listOf(SubscriptionSource("default-promo", DEFAULT_PROMO_URL, true))
+    private fun defaultSources(): List<SubscriptionSource> = emptyList()
 
-    private fun isObsoleteOfficialSource(source: SubscriptionSource): Boolean {
-        if (source.id == "default-zpp" || source.id == "default-germany-1") return true
-        val parsed = runCatching { URL(source.url.substringBefore('#')) }.getOrNull() ?: return false
-        return parsed.host.equals("mikrot.icu", true) ||
-            (parsed.host.equals("devel.dadway.ru", true) && parsed.path.equals("/sub/zpp", true))
-    }
+    internal fun removeBundledSources(sources: List<SubscriptionSource>): List<SubscriptionSource> =
+        sources.filterNot(::isBundledSource)
 
-    private fun sameSubscriptionUrl(left: String, right: String): Boolean = runCatching {
-        URL(left.substringBefore('#')).toURI().normalize() ==
-            URL(right.substringBefore('#')).toURI().normalize()
-    }.getOrDefault(false)
+    private fun isBundledSource(source: SubscriptionSource): Boolean = source.id in BUNDLED_SOURCE_IDS
 }

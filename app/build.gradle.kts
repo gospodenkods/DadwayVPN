@@ -23,7 +23,7 @@ android {
         minSdk = 23
         targetSdk = 35
         versionCode = 142
-        versionName = "8.5.5-test-reality-safari"
+        versionName = "8.5.5"
         resourceConfigurations += setOf("ru", "en")
     }
 

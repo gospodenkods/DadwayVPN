@@ -5,7 +5,7 @@
     android:orientation="vertical" android:paddingStart="20dp" android:paddingTop="8dp"
     android:paddingEnd="20dp" android:paddingBottom="8dp">
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="Серверы загружаются и объединяются из всех активных подписок."
+        android:text="Добавьте одну или несколько HTTPS-подписок. Серверы из активных подписок объединяются в общий список."
         android:textColor="@color/dadway_text_secondary" android:textSize="13sp"/>
     <LinearLayout android:id="@+id/subscriptionList" android:layout_width="match_parent"
         android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="vertical"/>

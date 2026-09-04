@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="980" viewBox="0 0 720 980" role="img" aria-labelledby="title desc">
+  <title id="title">Пустой список подписок Dadway VPN</title>
+  <desc id="desc">Кнопка Добавить подписку выделена.</desc>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#081118"/><stop offset="1" stop-color="#14232c"/></linearGradient><filter id="s"><feDropShadow dx="0" dy="12" stdDeviation="18" flood-opacity=".45"/></filter></defs>
+  <rect width="720" height="980" rx="50" fill="url(#bg)"/>
+  <g font-family="Arial, sans-serif">
+    <rect x="52" y="92" width="616" height="704" rx="40" fill="#16242d" stroke="#41525c" stroke-width="2" filter="url(#s)"/>
+    <text x="94" y="164" font-size="36" font-weight="700" fill="#f6f8f9">Подписки</text>
+    <text x="94" y="212" font-size="20" fill="#aab6bc">Добавьте одну или несколько HTTPS-подписок.</text>
+    <text x="94" y="242" font-size="20" fill="#aab6bc">Активные источники объединяются в общий список.</text>
+    <rect x="84" y="292" width="552" height="174" rx="32" fill="#111d25" stroke="#334650" stroke-width="2"/>
+    <circle cx="360" cy="352" r="28" fill="#263943"/><text x="360" y="363" text-anchor="middle" font-size="38" fill="#ffc400">＋</text>
+    <text x="360" y="411" text-anchor="middle" font-size="22" fill="#b4bec4">Подписки не добавлены.</text>
+    <text x="360" y="442" text-anchor="middle" font-size="18" fill="#8f9da5">Нажмите кнопку ниже.</text>
+    <rect x="84" y="504" width="552" height="84" rx="30" fill="#17262f" stroke="#ffc400" stroke-width="4"/>
+    <text x="360" y="556" text-anchor="middle" font-size="24" font-weight="700" fill="#ffc400">＋  ДОБАВИТЬ ПОДПИСКУ</text>
+    <line x1="84" y1="640" x2="636" y2="640" stroke="#31434d" stroke-width="2"/>
+    <text x="555" y="704" text-anchor="middle" font-size="22" font-weight="700" fill="#ffc400">ГОТОВО</text>
+    <path d="M360 895 C360 850 360 696 360 598" fill="none" stroke="#ffc400" stroke-width="10" stroke-linecap="round"/>
+    <path d="M339 620 L360 591 L381 620" fill="none" stroke="#ffc400" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="360" y="940" text-anchor="middle" font-size="24" font-weight="700" fill="#ffc400">3. Нажмите «Добавить подписку»</text>
+  </g>
+</svg>

@@ -42,7 +42,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if ($stagedFiles.Count -gt 0) {
-    Invoke-Git -Arguments @("commit", "-m", "Update Dadway VPN v8.2.0")
+    Invoke-Git -Arguments @("commit", "-m", "Release Dadway VPN 8.5.5")
 }
 else {
     Write-Host "No file changes to commit." -ForegroundColor Yellow
@@ -65,4 +65,4 @@ else {
 Invoke-Git -Arguments @("push", "-u", "origin", "main")
 
 Write-Host "Upload completed successfully." -ForegroundColor Green
-Write-Host "Open GitHub, select Actions, then Build Dadway VPN v8.2.0 APK." -ForegroundColor Green
+Write-Host "Open GitHub, select Actions, then Build Dadway VPN Production APK." -ForegroundColor Green

@@ -165,12 +165,17 @@ class MainActivity : AppCompatActivity() {
         }.onFailure {
             nodes = emptyList()
             serverListStatus = it.message ?: "Подписки недоступны"
-            selectedName.text = "Нет доступных серверов"
-            selectedSource.text = "Проверьте активные подписки"
+            val noSubscriptions = SubscriptionStore.all(this@MainActivity).none(SubscriptionSource::enabled)
+            selectedName.text = if (noSubscriptions) "Добавьте подписку" else "Нет доступных серверов"
+            selectedSource.text = if (noSubscriptions) {
+                "Настройки → Управление подписками"
+            } else {
+                "Проверьте активные подписки"
+            }
             server.text = "—"
             serverSheet?.let { dialog -> renderServerSheet(dialog) }
-            selectedStatus.text = "Не удалось загрузить серверы"
-            toast("Ошибка подписки: ${it.message}")
+            selectedStatus.text = if (noSubscriptions) "Список подписок пуст" else "Не удалось загрузить серверы"
+            if (showFeedback || !noSubscriptions) toast("Ошибка подписки: ${it.message}")
             LogStore.add(this@MainActivity, "Ошибка обновления подписки: ${it.message}")
         }
     }
@@ -282,7 +287,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestVpn() {
-        if (nodes.isEmpty()) { toast("Дождитесь загрузки серверов"); return }
+        if (nodes.isEmpty()) {
+            if (SubscriptionStore.all(this).none(SubscriptionSource::enabled)) {
+                toast("Добавьте активную подписку в настройках")
+                showSubscriptions()
+            } else {
+                toast("Дождитесь загрузки серверов")
+            }
+            return
+        }
         val selected = ConnectionProfiles.selected(this, nodes)
         if (selected.availability is Availability.Unavailable) {
             toast("Выбранный сервер недоступен. Выберите другой")
@@ -386,7 +399,7 @@ class MainActivity : AppCompatActivity() {
             val sources = SubscriptionStore.all(this)
             if (sources.isEmpty()) {
                 list.addView(TextView(this).apply {
-                    text = "Подписки не добавлены"
+                    text = "Подписки не добавлены. Нажмите «Добавить подписку» ниже."
                     setTextColor(color(R.color.dadway_text_secondary))
                     textSize = 13f
                 })
