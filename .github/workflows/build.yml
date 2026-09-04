@@ -71,8 +71,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p output
-          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk output/DadwayVPN-v8.5.4-test-android16-tun-arm64-v8a.apk
-          cp app/build/outputs/apk/release/app-armeabi-v7a-release.apk output/DadwayVPN-v8.5.4-test-android16-tun-armeabi-v7a.apk
+          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk output/DadwayVPN-v8.5.5-test-reality-safari-arm64-v8a.apk
+          cp app/build/outputs/apk/release/app-armeabi-v7a-release.apk output/DadwayVPN-v8.5.5-test-reality-safari-armeabi-v7a.apk
           (cd output && sha256sum *.apk > SHA256SUMS.txt)
       - name: Upload APK
         if: success()

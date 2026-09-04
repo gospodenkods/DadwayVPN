@@ -62,7 +62,7 @@ object ConnectionProfiles {
     }
 
     fun connectionText(context: Context): Pair<ServerNode, String> {
-        val nodes = loadWithStatus(context, refresh = true, allowCachedOnNetworkError = false).nodes
+        val nodes = loadWithStatus(context, refresh = true, allowCachedOnNetworkError = true).nodes
         val node = selected(context, nodes)
         return node to node.link
     }

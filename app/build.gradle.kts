@@ -22,8 +22,8 @@ android {
         applicationId = "ru.dadway.xrayv2"
         minSdk = 23
         targetSdk = 35
-        versionCode = 141
-        versionName = "8.5.4-test-android16-tun"
+        versionCode = 142
+        versionName = "8.5.5-test-reality-safari"
         resourceConfigurations += setOf("ru", "en")
     }
 

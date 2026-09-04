@@ -12,6 +12,7 @@ object XrayConfigBuilder {
     const val TUN_INTERFACE_NAME = "xray0"
     const val VPN_DNS_SERVER = "1.1.1.1"
     const val LIBXRAY_DNS_ENDPOINT = "1.1.1.1:53"
+    const val REALITY_FINGERPRINT = "safari"
 
     data class Built(val json: String, val server: String, val protocol: String)
 
@@ -129,7 +130,7 @@ object XrayConfigBuilder {
         reality.remove("serverNames")
         reality.remove("server_name")
 
-        params.value("fp")?.takeIf { it.isNotBlank() }?.let { reality.put("fingerprint", it) }
+        reality.put("fingerprint", compatibleRealityFingerprint(params.value("fp")))
         params.value("pbk")?.takeIf { it.isNotBlank() }?.let { reality.put("publicKey", it) }
         params.value("sid")?.let { reality.put("shortId", it) }
         params.value("spx")?.takeIf { it.isNotBlank() }?.let { reality.put("spiderX", it) }
@@ -170,14 +171,24 @@ object XrayConfigBuilder {
             // Their presence makes Xray parse an outbound as a REALITY server.
             val client = JSONObject()
                 .put("serverName", sni)
+                .put("fingerprint", compatibleRealityFingerprint(source.optString("fingerprint")))
 
-            copyNonBlank(source, client, "fingerprint")
             copyNonBlank(source, client, "publicKey")
             copyNonBlank(source, client, "shortId")
             copyNonBlank(source, client, "spiderX")
             copyNonBlank(source, client, "mldsa65Verify")
 
             stream.put("realitySettings", client)
+        }
+    }
+
+    /** Safari is the verified compatibility profile for the supported server and mobile routes. */
+    private fun compatibleRealityFingerprint(value: String?): String {
+        val normalized = value?.trim().orEmpty()
+        return if (normalized.isEmpty() || normalized.equals("chrome", ignoreCase = true)) {
+            REALITY_FINGERPRINT
+        } else {
+            normalized
         }
     }
 
