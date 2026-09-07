@@ -333,30 +333,37 @@ class MainActivity : AppCompatActivity() {
 
     private fun testConnection() = scope.launch {
         if (!AppState.current.running) { toast("Сначала подключите VPN"); return@launch }
-        ping.text = "Тест…"
         runCatching { withContext(Dispatchers.IO) { ConnectionTester.test() } }
-            .onSuccess { result ->
-                AppState.update { it.copy(externalIp = result.ip, pingMs = result.pingMs, downBps = result.bytesPerSecond) }
-            }.onFailure { ping.text = "Ошибка"; toast("Тест не выполнен: ${it.message}") }
+        .onSuccess { result ->
+            AppState.update {
+                it.copy(
+                    externalIp = result.ip,
+                    downBps = result.bytesPerSecond,
+                )
+            }
+        }.onFailure { toast("Тест не выполнен: ${it.message}") }
     }
 
     private fun runAutomaticConnectionTest(firstConnection: Boolean) {
         autoTestJob?.cancel()
         autoTestJob = scope.launch {
             if (firstConnection) {
-                AppState.update { it.copy(status = "Проверка IP…") }
+                AppState.update { it.copy(status = "Проверка внешнего IP…") }
                 delay(350)
-                AppState.update { it.copy(status = "Измерение задержки и скорости…") }
+                AppState.update { it.copy(status = "Измерение скорости…") }
             }
             runCatching { withContext(Dispatchers.IO) { ConnectionTester.test() } }
-                .onSuccess { result ->
-                    AppState.update {
-                        it.copy(status = "Готово", externalIp = result.ip, pingMs = result.pingMs, downBps = result.bytesPerSecond)
-                    }
-                    getSharedPreferences("dadway_onboarding", MODE_PRIVATE).edit()
-                        .putBoolean("first_connection_test_completed", true).apply()
+            .onSuccess { result ->
+                AppState.update {
+                    it.copy(
+                        status = "Готово",
+                        externalIp = result.ip,
+                        downBps = result.bytesPerSecond,
+                    )
                 }
-                .onFailure { LogStore.add(this@MainActivity, "Автоматический тест: ${it.message}") }
+                getSharedPreferences("dadway_onboarding", MODE_PRIVATE).edit()
+                    .putBoolean("first_connection_test_completed", true).apply()
+            }.onFailure { LogStore.add(this@MainActivity, "Автоматический тест: ${it.message}") }
         }
     }
 

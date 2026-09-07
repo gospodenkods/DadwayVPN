@@ -49,11 +49,13 @@ class DadwayVpnService : VpnService() {
         startJob = scope.launch {
             try {
                 val (activeServer, link) = ConnectionProfiles.connectionText(this@DadwayVpnService)
+                val endpointPingMs = ServerAvailabilityChecker.measureLatency(activeServer)
                 ensureActive()
                 LogStore.add(
                     this@DadwayVpnService,
                     "Выбран сервер: ${activeServer.name}; источник=${activeServer.subscriptionTitle ?: "не указан"}; " +
-                        "адрес=${activeServer.host}:${activeServer.port}",
+                        "адрес=${activeServer.host}:${activeServer.port}; " +
+                        "пинг=${endpointPingMs?.let { "$it мс" } ?: "недоступен"}",
                 )
 
                 tun = Builder()
@@ -84,7 +86,14 @@ class DadwayVpnService : VpnService() {
                 ensureActive()
                 LogStore.add(this@DadwayVpnService, "Локальный SOCKS-прокси 127.0.0.1:${XrayConfigBuilder.SOCKS_PORT} готов")
 
-                AppState.update { it.copy(running = true, status = "Подключено", server = activeServer.name) }
+                AppState.update {
+                    it.copy(
+                        running = true,
+                        status = "Подключено",
+                        server = activeServer.name,
+                        pingMs = endpointPingMs,
+                    )
+                }
                 updateNotification("Подключено: ${activeServer.name}")
                 startMetrics()
                 startSubscriptionValidation(activeServer)

@@ -8,7 +8,7 @@ import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
 object ConnectionTester {
-    data class Result(val ip: String, val pingMs: Long, val bytesPerSecond: Long)
+    data class Result(val ip: String, val bytesPerSecond: Long)
 
     private const val PROXY_READY_TIMEOUT_MS = 10_000L
     private const val PROXY_POLL_INTERVAL_MS = 200L
@@ -32,7 +32,6 @@ object ConnectionTester {
     }
 
     private fun testOnce(): Result {
-        val start = System.nanoTime()
         val ipConn = URL("https://api.ipify.org").openConnection(proxy()) as HttpsURLConnection
         ipConn.connectTimeout = 10_000; ipConn.readTimeout = 10_000
         val ip = try {
@@ -40,7 +39,6 @@ object ConnectionTester {
         } finally {
             ipConn.disconnect()
         }
-        val ping = (System.nanoTime() - start) / 1_000_000
 
         val speedStart = System.nanoTime()
         val c = URL("https://speed.cloudflare.com/__down?bytes=1000000").openConnection(proxy()) as HttpsURLConnection
@@ -55,7 +53,7 @@ object ConnectionTester {
             c.disconnect()
         }
         val seconds = ((System.nanoTime() - speedStart) / 1_000_000_000.0).coerceAtLeast(0.001)
-        return Result(ip, ping, (total / seconds).toLong())
+        return Result(ip, (total / seconds).toLong())
     }
 
     internal fun waitForEndpoint(
