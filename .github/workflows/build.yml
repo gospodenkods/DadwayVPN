@@ -1,4 +1,4 @@
-name: Build Dadway VPN Production APK
+name: Build Dadway VPN Production APK and AAB
 on:
   workflow_dispatch:
   push:
@@ -29,7 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;36.0.0" "platform-tools"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
       - name: Build VPN core
         shell: bash
         run: |
@@ -46,7 +46,7 @@ jobs:
           grep -q 'resetDNS()' ../libxray-api.txt
       - uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: "8.10.2"
+          gradle-version: "8.11.1"
       - name: Restore release signing key
         shell: bash
         env:
@@ -55,7 +55,7 @@ jobs:
           set -euo pipefail
           test -n "$DADWAY_KEYSTORE_BASE64"
           printf '%s' "$DADWAY_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/dadway-release.jks"
-      - name: Build signed release APK
+      - name: Build signed release APK and AAB
         shell: bash
         env:
           DADWAY_KEYSTORE_PATH: ${{ runner.temp }}/dadway-release.jks
@@ -64,22 +64,56 @@ jobs:
           DADWAY_KEY_PASSWORD: ${{ secrets.DADWAY_KEY_PASSWORD }}
         run: |
           set -o pipefail
-          gradle --no-daemon clean testReleaseUnitTest assembleRelease --stacktrace 2>&1 | tee build.log
-      - name: Collect APK
+          gradle --no-daemon clean testReleaseUnitTest assembleRelease bundleRelease --stacktrace 2>&1 | tee build.log
+      - name: Validate signed Android App Bundle
         if: success()
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p output
-          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk output/DadwayVPN-v8.5.7-arm64-v8a.apk
-          cp app/build/outputs/apk/release/app-armeabi-v7a-release.apk output/DadwayVPN-v8.5.7-armeabi-v7a.apk
-          (cd output && sha256sum *.apk > SHA256SUMS.txt)
+          test -s app/build/outputs/bundle/release/app-release.aab
+          jarsigner -verify app/build/outputs/bundle/release/app-release.aab | tee aab-signature.txt
+          grep -q 'jar verified' aab-signature.txt
+          curl -fL --retry 3 \
+            -o "$RUNNER_TEMP/bundletool.jar" \
+            https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar
+          echo 'a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29  '"$RUNNER_TEMP/bundletool.jar" | sha256sum --check
+          java -jar "$RUNNER_TEMP/bundletool.jar" validate \
+            --bundle=app/build/outputs/bundle/release/app-release.aab | tee aab-validation.txt
+          java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest \
+            --bundle=app/build/outputs/bundle/release/app-release.aab \
+            --module=base | tee aab-manifest.xml
+          grep -q 'package="ru.dadway.vpn"' aab-manifest.xml
+          grep -q 'android:versionCode="857"' aab-manifest.xml
+          grep -q 'android:versionName="8.5.7"' aab-manifest.xml
+          grep -q 'android:targetSdkVersion="36"' aab-manifest.xml
+          unzip -l app/build/outputs/bundle/release/app-release.aab | tee aab-contents.txt
+          grep -q 'base/manifest/AndroidManifest.xml' aab-contents.txt
+          grep -q 'base/lib/arm64-v8a/' aab-contents.txt
+          grep -q 'base/lib/armeabi-v7a/' aab-contents.txt
+      - name: Collect APK and AAB
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p output/apk output/aab
+          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk output/apk/DadwayVPN-v8.5.7-arm64-v8a.apk
+          cp app/build/outputs/apk/release/app-armeabi-v7a-release.apk output/apk/DadwayVPN-v8.5.7-armeabi-v7a.apk
+          cp app/build/outputs/bundle/release/app-release.aab output/aab/DadwayVPN-8.5.7.aab
+          (cd output/apk && sha256sum *.apk > SHA256SUMS.txt)
+          (cd output/aab && sha256sum *.aab > SHA256SUMS.txt)
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: DadwayVPN-v8.5.7-production-apk
-          path: output/
+          path: output/apk/
+          retention-days: 30
+      - name: Upload Google Play AAB
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DadwayVPN-8.5.7-google-play-aab
+          path: output/aab/
           retention-days: 30
       - name: Upload logs
         if: always()
@@ -90,5 +124,9 @@ jobs:
             build.log
             libxray-build.log
             libxray-api.txt
+            aab-signature.txt
+            aab-validation.txt
+            aab-manifest.xml
+            aab-contents.txt
           if-no-files-found: warn
           retention-days: 14

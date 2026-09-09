@@ -16,13 +16,13 @@ val hasReleaseSigning = listOf(
 
 android {
     namespace = "ru.dadway.xrayv2"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "ru.dadway.xrayv2"
+        applicationId = "ru.dadway.vpn"
         minSdk = 23
-        targetSdk = 35
-        versionCode = 144
+        targetSdk = 36
+        versionCode = 857
         versionName = "8.5.7"
         resourceConfigurations += setOf("ru", "en")
     }

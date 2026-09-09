@@ -65,4 +65,4 @@ else {
 Invoke-Git -Arguments @("push", "-u", "origin", "main")
 
 Write-Host "Upload completed successfully." -ForegroundColor Green
-Write-Host "Open GitHub, select Actions, then Build Dadway VPN Production APK." -ForegroundColor Green
+Write-Host "Open GitHub, select Actions, then Build Dadway VPN Production APK and AAB." -ForegroundColor Green

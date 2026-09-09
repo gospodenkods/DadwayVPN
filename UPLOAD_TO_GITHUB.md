@@ -18,4 +18,4 @@ git commit -m "Release Dadway VPN 8.5.7"
 git push origin main
 ```
 
-После загрузки откройте **GitHub → Actions → Build Dadway VPN Production APK**. Скачайте артефакт `DadwayVPN-v8.5.7-production-apk`.
+После загрузки откройте **GitHub → Actions → Build Dadway VPN Production APK and AAB**. Для Google Play скачайте артефакт `DadwayVPN-8.5.7-google-play-aab`, для прямой установки — `DadwayVPN-v8.5.7-production-apk`.

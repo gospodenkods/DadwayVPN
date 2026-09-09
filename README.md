@@ -25,12 +25,14 @@
 
 ## Версия
 
-- `versionCode`: 144
+- `applicationId`: ru.dadway.vpn
+- `versionCode`: 857
 - `versionName`: 8.5.7
+- `targetSdk`: 36
 
 ## Сборка
 
-GitHub Actions собирает отдельные подписанные APK для `arm64-v8a` и `armeabi-v7a`.
+GitHub Actions собирает отдельные подписанные APK для `arm64-v8a` и `armeabi-v7a`, а также подписанный `DadwayVPN-8.5.7.aab` для Google Play.
 
 Инструкция по загрузке находится в `UPLOAD_TO_GITHUB.md`.
 
