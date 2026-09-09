@@ -26,8 +26,10 @@ android {
         versionCode = 857
         versionName = "8.5.7"
         resourceConfigurations += setOf("ru", "en")
-        ndk {
-            abiFilters += setOf("arm64-v8a", "armeabi-v7a")
+        if (!buildAbiApks) {
+            ndk {
+                abiFilters += setOf("arm64-v8a", "armeabi-v7a")
+            }
         }
     }
 

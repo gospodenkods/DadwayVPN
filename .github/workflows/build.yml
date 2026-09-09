@@ -94,6 +94,13 @@ jobs:
           grep -q 'base/manifest/AndroidManifest.xml' aab-contents.txt
           grep -q 'base/lib/arm64-v8a/' aab-contents.txt
           grep -q 'base/lib/armeabi-v7a/' aab-contents.txt
+      - name: Upload Google Play AAB
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DadwayVPN-8.5.7-google-play-aab
+          path: output/aab/
+          retention-days: 30
       - name: Build signed ABI APKs
         if: success()
         shell: bash
@@ -115,13 +122,6 @@ jobs:
         with:
           name: DadwayVPN-v8.5.7-production-apk
           path: output/apk/
-          retention-days: 30
-      - name: Upload Google Play AAB
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: DadwayVPN-8.5.7-google-play-aab
-          path: output/aab/
           retention-days: 30
       - name: Upload logs
         if: always()
