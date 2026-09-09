@@ -7,6 +7,7 @@ val releaseStoreFile = System.getenv("DADWAY_KEYSTORE_PATH")
 val releaseStorePassword = System.getenv("DADWAY_KEYSTORE_PASSWORD")
 val releaseKeyAlias = System.getenv("DADWAY_KEY_ALIAS")
 val releaseKeyPassword = System.getenv("DADWAY_KEY_PASSWORD")
+val buildAbiApks = providers.gradleProperty("dadwayAbiApks").orNull.toBoolean()
 val hasReleaseSigning = listOf(
     releaseStoreFile,
     releaseStorePassword,
@@ -25,6 +26,9 @@ android {
         versionCode = 857
         versionName = "8.5.7"
         resourceConfigurations += setOf("ru", "en")
+        ndk {
+            abiFilters += setOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     signingConfigs {
@@ -55,7 +59,7 @@ android {
 
     splits {
         abi {
-            isEnable = true
+            isEnable = buildAbiApks
             reset()
             include("arm64-v8a", "armeabi-v7a")
             isUniversalApk = false
