@@ -1,5 +1,11 @@
 # Changelog
 
+## 8.5.8
+- Сборочная цепочка обновлена до AGP 9.0.1 и Gradle 9.1.0.
+- Выполнена миграция на встроенную поддержку Kotlin в AGP 9 без устаревшего `org.jetbrains.kotlin.android`.
+- Google Play-пакет сохранён как `ru.dadway.dadwayvpn`; `versionCode` увеличен до 858.
+- Добавлена подписанная Google Play-сборка `DadwayVPN-8.5.8.aab` только для ARM-архитектур.
+
 ## 8.5.7
 - Добавлена подписанная Google Play-сборка `DadwayVPN-8.5.7.aab`.
 - Google Play-конфигурация обновлена до `applicationId ru.dadway.dadwayvpn`, `versionCode 857`, `targetSdk 36` и `compileSdk 36`.

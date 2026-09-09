@@ -46,7 +46,7 @@ jobs:
           grep -q 'resetDNS()' ../libxray-api.txt
       - uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: "8.11.1"
+          gradle-version: "9.1.0"
       - name: Restore release signing key
         shell: bash
         env:
@@ -67,30 +67,30 @@ jobs:
           gradle --no-daemon clean testReleaseUnitTest bundleRelease --stacktrace 2>&1 | tee aab-build.log
           test -s app/build/outputs/bundle/release/app-release.aab
           mkdir -p output/aab
-          cp app/build/outputs/bundle/release/app-release.aab output/aab/DadwayVPN-8.5.7.aab
+          cp app/build/outputs/bundle/release/app-release.aab output/aab/DadwayVPN-8.5.8.aab
           (cd output/aab && sha256sum *.aab > SHA256SUMS.txt)
       - name: Validate signed Android App Bundle
         if: success()
         shell: bash
         run: |
           set -euo pipefail
-          test -s output/aab/DadwayVPN-8.5.7.aab
-          jarsigner -verify output/aab/DadwayVPN-8.5.7.aab | tee aab-signature.txt
+          test -s output/aab/DadwayVPN-8.5.8.aab
+          jarsigner -verify output/aab/DadwayVPN-8.5.8.aab | tee aab-signature.txt
           grep -q 'jar verified' aab-signature.txt
           curl -fL --retry 3 \
             -o "$RUNNER_TEMP/bundletool.jar" \
             https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar
           echo 'a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29  '"$RUNNER_TEMP/bundletool.jar" | sha256sum --check
           java -jar "$RUNNER_TEMP/bundletool.jar" validate \
-            --bundle=output/aab/DadwayVPN-8.5.7.aab | tee aab-validation.txt
+            --bundle=output/aab/DadwayVPN-8.5.8.aab | tee aab-validation.txt
           java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest \
-            --bundle=output/aab/DadwayVPN-8.5.7.aab \
+            --bundle=output/aab/DadwayVPN-8.5.8.aab \
             --module=base | tee aab-manifest.xml
           grep -q 'package="ru.dadway.dadwayvpn"' aab-manifest.xml
-          grep -q 'android:versionCode="857"' aab-manifest.xml
-          grep -q 'android:versionName="8.5.7"' aab-manifest.xml
+          grep -q 'android:versionCode="858"' aab-manifest.xml
+          grep -q 'android:versionName="8.5.8"' aab-manifest.xml
           grep -q 'android:targetSdkVersion="36"' aab-manifest.xml
-          unzip -l output/aab/DadwayVPN-8.5.7.aab | tee aab-contents.txt
+          unzip -l output/aab/DadwayVPN-8.5.8.aab | tee aab-contents.txt
           grep -q 'base/manifest/AndroidManifest.xml' aab-contents.txt
           grep -q 'base/lib/arm64-v8a/' aab-contents.txt
           grep -q 'base/lib/armeabi-v7a/' aab-contents.txt
@@ -98,7 +98,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: DadwayVPN-8.5.7-google-play-aab
+          name: DadwayVPN-8.5.8-google-play-aab
           path: output/aab/
           retention-days: 30
       - name: Build signed ABI APKs
@@ -113,21 +113,21 @@ jobs:
           set -euo pipefail
           gradle --no-daemon clean assembleRelease -PdadwayAbiApks=true --stacktrace 2>&1 | tee apk-build.log
           mkdir -p output/apk
-          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk output/apk/DadwayVPN-v8.5.7-arm64-v8a.apk
-          cp app/build/outputs/apk/release/app-armeabi-v7a-release.apk output/apk/DadwayVPN-v8.5.7-armeabi-v7a.apk
+          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk output/apk/DadwayVPN-v8.5.8-arm64-v8a.apk
+          cp app/build/outputs/apk/release/app-armeabi-v7a-release.apk output/apk/DadwayVPN-v8.5.8-armeabi-v7a.apk
           (cd output/apk && sha256sum *.apk > SHA256SUMS.txt)
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: DadwayVPN-v8.5.7-production-apk
+          name: DadwayVPN-v8.5.8-production-apk
           path: output/apk/
           retention-days: 30
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: DadwayVPN-v8.5.7-production-build-logs
+          name: DadwayVPN-v8.5.8-production-build-logs
           path: |
             aab-build.log
             apk-build.log

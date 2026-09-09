@@ -1,4 +1,4 @@
-# Загрузка Dadway VPN 8.5.7 в GitHub
+# Загрузка Dadway VPN 8.5.8 в GitHub
 
 Рекомендуемый способ — работать с уже клонированным репозиторием, чтобы не создавать несвязанную историю Git.
 
@@ -14,8 +14,8 @@ git clone https://github.com/gospodenkods/DadwayVPN.git D:\git\DadwayVPN
 cd D:\git\DadwayVPN
 git status
 git add --all
-git commit -m "Release Dadway VPN 8.5.7"
+git commit -m "Release Dadway VPN 8.5.8"
 git push origin main
 ```
 
-После загрузки откройте **GitHub → Actions → Build Dadway VPN Production APK and AAB**. Для Google Play скачайте артефакт `DadwayVPN-8.5.7-google-play-aab`, для прямой установки — `DadwayVPN-v8.5.7-production-apk`.
+После загрузки откройте **GitHub → Actions → Build Dadway VPN Production APK and AAB**. Для Google Play скачайте артефакт `DadwayVPN-8.5.8-google-play-aab`, для прямой установки — `DadwayVPN-v8.5.8-production-apk`.

@@ -1,6 +1,5 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 val releaseStoreFile = System.getenv("DADWAY_KEYSTORE_PATH")
@@ -23,8 +22,8 @@ android {
         applicationId = "ru.dadway.dadwayvpn"
         minSdk = 23
         targetSdk = 36
-        versionCode = 857
-        versionName = "8.5.7"
+        versionCode = 858
+        versionName = "8.5.8"
         resourceConfigurations += setOf("ru", "en")
         if (!buildAbiApks) {
             ndk {
@@ -72,7 +71,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
     buildFeatures { buildConfig = true }
     packaging { resources.excludes += setOf("META-INF/LICENSE*", "META-INF/NOTICE*") }
 }
