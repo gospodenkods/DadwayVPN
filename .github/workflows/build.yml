@@ -86,7 +86,7 @@ jobs:
           java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest \
             --bundle=output/aab/DadwayVPN-8.5.7.aab \
             --module=base | tee aab-manifest.xml
-          grep -q 'package="ru.dadway.vpn"' aab-manifest.xml
+          grep -q 'package="ru.dadway.dadwayvpn"' aab-manifest.xml
           grep -q 'android:versionCode="857"' aab-manifest.xml
           grep -q 'android:versionName="8.5.7"' aab-manifest.xml
           grep -q 'android:targetSdkVersion="36"' aab-manifest.xml

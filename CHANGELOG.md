@@ -2,7 +2,7 @@
 
 ## 8.5.7
 - Добавлена подписанная Google Play-сборка `DadwayVPN-8.5.7.aab`.
-- Google Play-конфигурация обновлена до `applicationId ru.dadway.vpn`, `versionCode 857`, `targetSdk 36` и `compileSdk 36`.
+- Google Play-конфигурация обновлена до `applicationId ru.dadway.dadwayvpn`, `versionCode 857`, `targetSdk 36` и `compileSdk 36`.
 - Сборочная цепочка обновлена до AGP 8.10.1 и Gradle 8.11.1 с проверкой подписи и ARM-библиотек внутри AAB.
 - Поле «Пинг» теперь показывает медианную TCP-задержку до фактического `host:port` выбранного VPN-сервера.
 - Удалено ошибочное использование длительности HTTPS-запроса к сервису внешнего IP в качестве пинга.

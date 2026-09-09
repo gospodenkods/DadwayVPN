@@ -20,7 +20,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "ru.dadway.vpn"
+        applicationId = "ru.dadway.dadwayvpn"
         minSdk = 23
         targetSdk = 36
         versionCode = 857

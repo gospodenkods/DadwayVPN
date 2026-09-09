@@ -25,7 +25,7 @@
 
 ## Версия
 
-- `applicationId`: ru.dadway.vpn
+- `applicationId`: ru.dadway.dadwayvpn
 - `versionCode`: 857
 - `versionName`: 8.5.7
 - `targetSdk`: 36
