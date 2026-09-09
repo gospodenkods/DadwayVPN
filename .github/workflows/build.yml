@@ -55,7 +55,7 @@ jobs:
           set -euo pipefail
           test -n "$DADWAY_KEYSTORE_BASE64"
           printf '%s' "$DADWAY_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/dadway-release.jks"
-      - name: Build signed release APK and AAB
+      - name: Build signed release AAB
         shell: bash
         env:
           DADWAY_KEYSTORE_PATH: ${{ runner.temp }}/dadway-release.jks
@@ -63,44 +63,52 @@ jobs:
           DADWAY_KEY_ALIAS: ${{ secrets.DADWAY_KEY_ALIAS }}
           DADWAY_KEY_PASSWORD: ${{ secrets.DADWAY_KEY_PASSWORD }}
         run: |
-          set -o pipefail
-          gradle --no-daemon clean testReleaseUnitTest assembleRelease bundleRelease --stacktrace 2>&1 | tee build.log
+          set -euo pipefail
+          gradle --no-daemon clean testReleaseUnitTest bundleRelease --stacktrace 2>&1 | tee aab-build.log
+          test -s app/build/outputs/bundle/release/app-release.aab
+          mkdir -p output/aab
+          cp app/build/outputs/bundle/release/app-release.aab output/aab/DadwayVPN-8.5.7.aab
+          (cd output/aab && sha256sum *.aab > SHA256SUMS.txt)
       - name: Validate signed Android App Bundle
         if: success()
         shell: bash
         run: |
           set -euo pipefail
-          test -s app/build/outputs/bundle/release/app-release.aab
-          jarsigner -verify app/build/outputs/bundle/release/app-release.aab | tee aab-signature.txt
+          test -s output/aab/DadwayVPN-8.5.7.aab
+          jarsigner -verify output/aab/DadwayVPN-8.5.7.aab | tee aab-signature.txt
           grep -q 'jar verified' aab-signature.txt
           curl -fL --retry 3 \
             -o "$RUNNER_TEMP/bundletool.jar" \
             https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar
           echo 'a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29  '"$RUNNER_TEMP/bundletool.jar" | sha256sum --check
           java -jar "$RUNNER_TEMP/bundletool.jar" validate \
-            --bundle=app/build/outputs/bundle/release/app-release.aab | tee aab-validation.txt
+            --bundle=output/aab/DadwayVPN-8.5.7.aab | tee aab-validation.txt
           java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest \
-            --bundle=app/build/outputs/bundle/release/app-release.aab \
+            --bundle=output/aab/DadwayVPN-8.5.7.aab \
             --module=base | tee aab-manifest.xml
           grep -q 'package="ru.dadway.vpn"' aab-manifest.xml
           grep -q 'android:versionCode="857"' aab-manifest.xml
           grep -q 'android:versionName="8.5.7"' aab-manifest.xml
           grep -q 'android:targetSdkVersion="36"' aab-manifest.xml
-          unzip -l app/build/outputs/bundle/release/app-release.aab | tee aab-contents.txt
+          unzip -l output/aab/DadwayVPN-8.5.7.aab | tee aab-contents.txt
           grep -q 'base/manifest/AndroidManifest.xml' aab-contents.txt
           grep -q 'base/lib/arm64-v8a/' aab-contents.txt
           grep -q 'base/lib/armeabi-v7a/' aab-contents.txt
-      - name: Collect APK and AAB
+      - name: Build signed ABI APKs
         if: success()
         shell: bash
+        env:
+          DADWAY_KEYSTORE_PATH: ${{ runner.temp }}/dadway-release.jks
+          DADWAY_KEYSTORE_PASSWORD: ${{ secrets.DADWAY_KEYSTORE_PASSWORD }}
+          DADWAY_KEY_ALIAS: ${{ secrets.DADWAY_KEY_ALIAS }}
+          DADWAY_KEY_PASSWORD: ${{ secrets.DADWAY_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          mkdir -p output/apk output/aab
+          gradle --no-daemon clean assembleRelease --stacktrace 2>&1 | tee apk-build.log
+          mkdir -p output/apk
           cp app/build/outputs/apk/release/app-arm64-v8a-release.apk output/apk/DadwayVPN-v8.5.7-arm64-v8a.apk
           cp app/build/outputs/apk/release/app-armeabi-v7a-release.apk output/apk/DadwayVPN-v8.5.7-armeabi-v7a.apk
-          cp app/build/outputs/bundle/release/app-release.aab output/aab/DadwayVPN-8.5.7.aab
           (cd output/apk && sha256sum *.apk > SHA256SUMS.txt)
-          (cd output/aab && sha256sum *.aab > SHA256SUMS.txt)
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
@@ -121,7 +129,8 @@ jobs:
         with:
           name: DadwayVPN-v8.5.7-production-build-logs
           path: |
-            build.log
+            aab-build.log
+            apk-build.log
             libxray-build.log
             libxray-api.txt
             aab-signature.txt
