@@ -24,12 +24,15 @@ android {
         targetSdk = 36
         versionCode = 858
         versionName = "8.5.8"
-        resourceConfigurations += setOf("ru", "en")
         if (!buildAbiApks) {
             ndk {
                 abiFilters += setOf("arm64-v8a", "armeabi-v7a")
             }
         }
+    }
+
+    androidResources {
+        localeFilters += setOf("ru", "en")
     }
 
     signingConfigs {

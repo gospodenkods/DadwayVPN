@@ -64,7 +64,7 @@ jobs:
           DADWAY_KEY_PASSWORD: ${{ secrets.DADWAY_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          gradle --no-daemon clean testReleaseUnitTest bundleRelease --stacktrace 2>&1 | tee aab-build.log
+          gradle --no-daemon clean testDebugUnitTest bundleRelease --stacktrace 2>&1 | tee aab-build.log
           test -s app/build/outputs/bundle/release/app-release.aab
           mkdir -p output/aab
           cp app/build/outputs/bundle/release/app-release.aab output/aab/DadwayVPN-8.5.8.aab
