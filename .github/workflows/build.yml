@@ -64,8 +64,15 @@ jobs:
           DADWAY_KEY_PASSWORD: ${{ secrets.DADWAY_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          gradle --no-daemon clean testDebugUnitTest bundleRelease --stacktrace 2>&1 | tee aab-build.log
+          if grep -R -n -E \
+            'statusBarColor|navigationBarColor|navigationBarDividerColor|setDecorFitsSystemWindows' \
+            app/src/main --include='*.kt' --include='*.java' --include='*.xml'; then
+            echo 'Unsupported Android 15 edge-to-edge API or attribute found' >&2
+            exit 1
+          fi
+          gradle --no-daemon clean testDebugUnitTest lintRelease bundleRelease --stacktrace 2>&1 | tee aab-build.log
           test -s app/build/outputs/bundle/release/app-release.aab
+          test -s app/build/reports/lint-results-release.html
           mkdir -p output/aab
           test -s app/build/outputs/mapping/release/configuration.txt
           grep -E '^-repackageclasses([[:space:]].*)?$' app/build/outputs/mapping/release/configuration.txt | tee r8-configuration-check.txt
@@ -144,5 +151,7 @@ jobs:
             aab-manifest.xml
             aab-contents.txt
             r8-configuration-check.txt
+            app/build/reports/lint-results-release.html
+            app/build/reports/lint-results-release.xml
           if-no-files-found: warn
           retention-days: 14

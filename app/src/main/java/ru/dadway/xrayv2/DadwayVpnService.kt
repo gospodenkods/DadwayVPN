@@ -161,8 +161,17 @@ class DadwayVpnService : VpnService() {
         runCatching { tun?.close() }; tun = null
         AppState.update { UiState(status = finalStatus) }
         LogStore.add(this, "VPN остановлен")
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        removeForegroundNotification()
         stopSelf()
+    }
+
+    @Suppress("DEPRECATION")
+    private fun removeForegroundNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            stopForeground(true)
+        }
     }
 
     override fun onRevoke() { stopVpn(); super.onRevoke() }

@@ -21,14 +21,15 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.button.MaterialButton
@@ -78,8 +79,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         applySavedTheme()
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
         applySystemInsets()
         bindViews()
@@ -132,11 +133,32 @@ class MainActivity : AppCompatActivity() {
 
     private fun applySystemInsets() {
         val root = findViewById<View>(R.id.rootScroll)
-        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(0, bars.top, 0, bars.bottom)
+        applySafeDrawingInsets(root, includeIme = true)
+    }
+
+    private fun applySafeDrawingInsets(
+        view: View,
+        includeIme: Boolean,
+        includeTop: Boolean = true,
+    ) {
+        val initialLeft = view.paddingLeft
+        val initialTop = view.paddingTop
+        val initialRight = view.paddingRight
+        val initialBottom = view.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(view) { target, insets ->
+            var insetTypes = WindowInsetsCompat.Type.systemBars() or
+                WindowInsetsCompat.Type.displayCutout()
+            if (includeIme) insetTypes = insetTypes or WindowInsetsCompat.Type.ime()
+            val safeInsets = insets.getInsets(insetTypes)
+            target.updatePadding(
+                left = initialLeft + safeInsets.left,
+                top = initialTop + if (includeTop) safeInsets.top else 0,
+                right = initialRight + safeInsets.right,
+                bottom = initialBottom + safeInsets.bottom,
+            )
             insets
         }
+        ViewCompat.requestApplyInsets(view)
     }
 
     override fun onDestroy() {
@@ -187,7 +209,10 @@ class MainActivity : AppCompatActivity() {
         }
         val dialog = BottomSheetDialog(this)
         dialog.setContentView(R.layout.sheet_servers)
-        dialog.window?.navigationBarColor = color(R.color.dadway_background)
+        dialog.findViewById<View>(R.id.serverSheetRoot)?.let {
+            // Material handles the sheet's status-bar overlap; protect the other edges here.
+            applySafeDrawingInsets(it, includeIme = false, includeTop = false)
+        }
         dialog.setOnShowListener {
             dialog.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)?.let { sheet ->
                 sheet.background = ColorDrawable(Color.TRANSPARENT)
