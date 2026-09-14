@@ -18,7 +18,7 @@
                         android:text="VPN" android:textColor="@color/dadway_danger" android:textSize="20sp" android:textStyle="bold"/>
                 </LinearLayout>
                 <TextView android:id="@+id/versionText" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="Версия 8.6.0" android:textColor="@color/dadway_text_secondary" android:textSize="9sp"/>
+                    android:text="Версия 8.6.1" android:textColor="@color/dadway_text_secondary" android:textSize="9sp"/>
                 <TextView android:id="@+id/projectHelpLink" android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true"
                     android:paddingEnd="10dp" android:paddingTop="1dp" android:text="Помощь проекту"
@@ -96,6 +96,28 @@
         <com.google.android.material.button.MaterialButton android:id="@+id/updateButton" android:layout_width="match_parent" android:layout_height="46dp"
             android:layout_marginTop="8dp" android:text="ОБНОВИТЬ СПИСОК СЕРВЕРОВ" android:textSize="12sp" android:textColor="@color/dadway_primary"
             app:backgroundTint="@color/dadway_surface" app:cornerRadius="18dp" app:strokeColor="@color/card_stroke" app:strokeWidth="1dp"/>
+
+        <LinearLayout android:id="@+id/purchasePanel" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:background="@drawable/purchase_panel_bg" android:orientation="vertical"
+            android:paddingStart="8dp" android:paddingTop="9dp" android:paddingEnd="8dp" android:paddingBottom="8dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center" android:text="@string/buy_subscription" android:textColor="@color/dadway_text"
+                android:textSize="13sp" android:textStyle="bold"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:baselineAligned="false" android:orientation="horizontal">
+                <com.google.android.material.button.MaterialButton android:id="@+id/buyTelegramButton"
+                    style="@style/DadwayPurchaseButton" android:layout_width="0dp" android:layout_height="58dp"
+                    android:layout_marginEnd="3dp" android:layout_weight="1" android:contentDescription="@string/buy_via_telegram_description"
+                    android:text="@string/buy_via_telegram" app:icon="@drawable/ic_telegram"
+                    app:iconTint="@color/telegram_blue"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/buyWebsiteButton"
+                    style="@style/DadwayPurchaseButton" android:layout_width="0dp" android:layout_height="58dp"
+                    android:layout_marginStart="3dp" android:layout_weight="1" android:contentDescription="@string/buy_on_website_description"
+                    android:text="@string/buy_on_website" app:icon="@drawable/ic_globe"
+                    app:iconTint="@color/dadway_primary"/>
+            </LinearLayout>
+        </LinearLayout>
+
         <TextView android:id="@+id/telegramLink" android:layout_width="match_parent" android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true"
             android:gravity="center" android:text="Telegram: @gds_technical"

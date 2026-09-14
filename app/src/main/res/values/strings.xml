@@ -13,4 +13,9 @@
     <string name="telegram_channel">Telegram: @gds_technical</string>
     <string name="telegram_channel_multiline">TELEGRAM:\n@GDS_TECHNICAL</string>
     <string name="connection_profile">СЕРВЕР ПОДКЛЮЧЕНИЯ</string>
+    <string name="buy_subscription">Купить подписку</string>
+    <string name="buy_via_telegram">Telegram-бот\n@vpnfactorytrue_bot</string>
+    <string name="buy_via_telegram_description">Купить подписку через Telegram-бот vpnfactorytrue_bot</string>
+    <string name="buy_on_website">Купить на сайте\ndadway.top</string>
+    <string name="buy_on_website_description">Купить подписку на сайте dadway.top</string>
 </resources>

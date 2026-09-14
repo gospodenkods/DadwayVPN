@@ -93,6 +93,12 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.projectHelpLink).setOnClickListener {
             openExternal("https://pay.cloudtips.ru/p/19a29f12")
         }
+        findViewById<MaterialButton>(R.id.buyTelegramButton).setOnClickListener {
+            openExternal("https://t.me/vpnfactorytrue_bot")
+        }
+        findViewById<MaterialButton>(R.id.buyWebsiteButton).setOnClickListener {
+            openExternal("https://dadway.top")
+        }
         connect.setOnClickListener { if (AppState.current.running) stopVpnService() else requestVpn() }
         findViewById<MaterialButton>(R.id.updateButton).setOnClickListener { refreshServers(true) }
         findViewById<MaterialButton>(R.id.testButton).setOnClickListener { testConnection() }

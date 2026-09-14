@@ -12,6 +12,7 @@
     <color name="dadway_text">#172027</color>
     <color name="dadway_text_secondary">#5E6972</color>
     <color name="card_stroke">#C8D0D6</color>
+    <color name="telegram_blue">#168AC1</color>
     <color name="blue_primary">#C58E00</color><color name="blue_light">#E5B62E</color>
     <color name="red_primary">#D92727</color><color name="yellow_accent">#C58E00</color>
     <color name="success">#168A35</color><color name="muted">#6D7881</color><color name="white">#FFFFFFFF</color>
