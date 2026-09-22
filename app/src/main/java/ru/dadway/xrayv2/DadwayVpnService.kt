@@ -58,14 +58,42 @@ class DadwayVpnService : VpnService() {
                         "пинг=${endpointPingMs?.let { "$it мс" } ?: "недоступен"}",
                 )
 
-                tun = Builder()
+                val routing = AppRoutingStore.read(this@DadwayVpnService)
+                val vpnBuilder = Builder()
                     .setSession("Dadway VPN")
                     .setMtu(1500)
                     .addAddress("172.19.0.1", 30)
                     .addRoute("0.0.0.0", 0)
                     .addDnsServer(XrayConfigBuilder.VPN_DNS_SERVER)
-                    .addDisallowedApplication(packageName)
-                    .establish() ?: error("Android не создал VPN-интерфейс")
+
+                when (routing.mode) {
+                    AppRoutingMode.ALL -> {
+                        vpnBuilder.addDisallowedApplication(packageName)
+                        LogStore.add(this@DadwayVpnService, "Маршрутизация приложений: весь трафик устройства")
+                    }
+                    AppRoutingMode.SELECTED -> {
+                        var addedPackages = 0
+                        AppRoutingPolicy.selectedPackages(routing, packageName).forEach { selectedPackage ->
+                            runCatching { vpnBuilder.addAllowedApplication(selectedPackage) }
+                                .onSuccess { addedPackages++ }
+                                .onFailure {
+                                    LogStore.add(
+                                        this@DadwayVpnService,
+                                        "Приложение исключено из маршрутизации: $selectedPackage (${it.message})",
+                                    )
+                                }
+                        }
+                        check(addedPackages > 0) {
+                            "Выбранные приложения не установлены. Обновите список в настройках"
+                        }
+                        LogStore.add(
+                            this@DadwayVpnService,
+                            "Маршрутизация приложений: только выбранные ($addedPackages)",
+                        )
+                    }
+                }
+
+                tun = vpnBuilder.establish() ?: error("Android не создал VPN-интерфейс")
                 ensureActive()
 
                 val base = XrayBridge.linksToConfig(link)

@@ -10,13 +10,11 @@ import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -33,7 +31,6 @@ import androidx.core.view.updatePadding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.switchmaterial.SwitchMaterial
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -76,6 +73,11 @@ class MainActivity : AppCompatActivity() {
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) requestVpnPermission() else showNotificationRequiredDialog()
     }
+    private val settingsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.data?.getBooleanExtra(SettingsActivity.EXTRA_REFRESH_SERVERS, false) == true) {
+            refreshServers(true)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         applySavedTheme()
@@ -100,14 +102,15 @@ class MainActivity : AppCompatActivity() {
             openExternal("https://dadway.top")
         }
         connect.setOnClickListener { if (AppState.current.running) stopVpnService() else requestVpn() }
-        findViewById<MaterialButton>(R.id.updateButton).setOnClickListener { refreshServers(true) }
         findViewById<MaterialButton>(R.id.testButton).setOnClickListener { testConnection() }
         findViewById<MaterialButton>(R.id.ipButton).setOnClickListener { testConnection() }
         findViewById<MaterialButton>(R.id.saveLogsButton).setOnClickListener {
             val version = BuildConfig.VERSION_NAME.replace(Regex("[^A-Za-z0-9._-]"), "_")
             saveLog.launch("dadway-vpn-$version-${System.currentTimeMillis()}.txt")
         }
-        findViewById<MaterialButton>(R.id.settingsButton).setOnClickListener { showSettings() }
+        findViewById<MaterialButton>(R.id.settingsButton).setOnClickListener {
+            settingsLauncher.launch(Intent(this, SettingsActivity::class.java))
+        }
 
         AppState.observe(listener)
         refreshServers(false)
@@ -398,106 +401,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showSettings() {
-        AlertDialog.Builder(this)
-            .setTitle("Настройки")
-            .setItems(arrayOf("Управление подписками", "Тема оформления")) { _, which ->
-                if (which == 0) showSubscriptions() else showThemeSettings()
-            }
-            .setNegativeButton("Закрыть", null)
-            .show()
-    }
-
-    private fun showThemeSettings() {
-        val labels = arrayOf("Системная тема", "Светлая тема", "Тёмная тема")
-        val modes = intArrayOf(
-            AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
-            AppCompatDelegate.MODE_NIGHT_NO,
-            AppCompatDelegate.MODE_NIGHT_YES
-        )
-        val prefs = getSharedPreferences("dadway_ui", MODE_PRIVATE)
-        val current = prefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-        AlertDialog.Builder(this)
-            .setTitle("Тема оформления")
-            .setSingleChoiceItems(labels, modes.indexOf(current).coerceAtLeast(0)) { dialog, which ->
-                prefs.edit().putInt("theme_mode", modes[which]).apply()
-                dialog.dismiss()
-                AppCompatDelegate.setDefaultNightMode(modes[which])
-            }
-            .setNeutralButton("Обновить серверы") { _, _ -> refreshServers(true) }
-            .setNegativeButton("Закрыть", null)
-            .show()
-    }
-
     private fun showSubscriptions() {
-        val content = layoutInflater.inflate(R.layout.dialog_subscriptions, null)
-        val list = content.findViewById<LinearLayout>(R.id.subscriptionList)
-        fun renderSources() {
-            list.removeAllViews()
-            val sources = SubscriptionStore.all(this)
-            if (sources.isEmpty()) {
-                list.addView(TextView(this).apply {
-                    text = "Подписки не добавлены. Нажмите «Добавить подписку» ниже."
-                    setTextColor(color(R.color.dadway_text_secondary))
-                    textSize = 13f
-                })
-            }
-            sources.forEach { source ->
-                val item = layoutInflater.inflate(R.layout.item_subscription, list, false)
-                val toggle = item.findViewById<SwitchMaterial>(R.id.subscriptionSwitch)
-                toggle.text = source.title
-                toggle.isChecked = source.enabled
-                toggle.setOnCheckedChangeListener { _, enabled ->
-                    SubscriptionStore.setEnabled(this, source.id, enabled)
-                    refreshServers(false)
-                }
-                item.findViewById<ImageButton>(R.id.deleteSubscriptionButton).setOnClickListener {
-                    AlertDialog.Builder(this)
-                        .setTitle("Удалить подписку?")
-                        .setMessage(source.url)
-                        .setPositiveButton("Удалить") { _, _ ->
-                            SubscriptionStore.remove(this, source.id)
-                            renderSources()
-                            refreshServers(false)
-                        }
-                        .setNegativeButton("Отмена", null)
-                        .show()
-                }
-                list.addView(item)
-            }
-        }
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("Подписки")
-            .setView(content)
-            .setPositiveButton("Готово") { _, _ -> refreshServers(true) }
-            .create()
-        content.findViewById<MaterialButton>(R.id.addSubscriptionButton).setOnClickListener {
-            val input = EditText(this).apply {
-                hint = "https://example.com/subscription"
-                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
-                setSingleLine(true)
-            }
-            val addDialog = AlertDialog.Builder(this)
-                .setTitle("Новая подписка")
-                .setView(input)
-                .setPositiveButton("Добавить", null)
-                .setNegativeButton("Отмена", null)
-                .create()
-            addDialog.setOnShowListener {
-                addDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                    runCatching { SubscriptionStore.add(this, input.text.toString()) }
-                        .onSuccess {
-                            addDialog.dismiss()
-                            renderSources()
-                            refreshServers(false)
-                        }
-                        .onFailure { input.error = it.message ?: "Не удалось добавить подписку" }
-                }
-            }
-            addDialog.show()
-        }
-        renderSources()
-        dialog.show()
+        SubscriptionDialogs.show(this) { refreshServers(false) }
     }
 
     private fun render(state: UiState) {

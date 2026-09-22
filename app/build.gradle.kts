@@ -22,8 +22,8 @@ android {
         applicationId = "ru.dadway.dadwayvpn"
         minSdk = 23
         targetSdk = 36
-        versionCode = 862
-        versionName = "8.6.2"
+        versionCode = 863
+        versionName = "8.6.3"
         if (!buildAbiApks) {
             ndk {
                 abiFilters += setOf("arm64-v8a", "armeabi-v7a")
