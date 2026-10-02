@@ -100,7 +100,7 @@ jobs:
             --bundle=output/aab/DadwayVPN-8.6.3.aab \
             --module=base | tee aab-manifest.xml
           grep -q 'package="ru.dadway.dadwayvpn"' aab-manifest.xml
-          grep -q 'android:versionCode="863"' aab-manifest.xml
+          grep -q 'android:versionCode="864"' aab-manifest.xml
           grep -q 'android:versionName="8.6.3"' aab-manifest.xml
           grep -q 'android:targetSdkVersion="36"' aab-manifest.xml
           unzip -l output/aab/DadwayVPN-8.6.3.aab | tee aab-contents.txt

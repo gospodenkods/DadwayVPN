@@ -22,7 +22,7 @@ android {
         applicationId = "ru.dadway.dadwayvpn"
         minSdk = 23
         targetSdk = 36
-        versionCode = 863
+        versionCode = 864
         versionName = "8.6.3"
         if (!buildAbiApks) {
             ndk {
