@@ -5,7 +5,7 @@
 ## Рекомендации Console
 
 1. Edge-to-edge: все три Activity включают `enableEdgeToEdge()` и применяют системные отступы. Общий обработчик защищает элементы от системных панелей, вырезов и клавиатуры, сохраняет исходный padding и запрашивает insets после прикрепления View к окну. Bottom sheet сохраняет обработку верхнего края Material, остальные края защищены общим обработчиком.
-2. Устаревшие API: Console указала `Window.setStatusBarColor`, `Window.setNavigationBarColor`, `LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES` в обфусцированных классах `be.P`, `yd.P`, `zd.P`, `v.n`. В исходниках приложения прямых вызовов нет. Без mapping именно проверенного AAB нельзя достоверно назвать исходные классы. Обновлены стабильные Activity, AppCompat и Core, CI запрещает возвращение этих параметров в исходники и сохраняет AAB mapping отдельно от последующей APK-сборки. Совместимые библиотеки могут содержать вызовы для старых Android; исчезновение предупреждения требуется подтвердить после загрузки нового AAB в Console.
+2. Устаревшие API: Console указала `Window.setStatusBarColor`, `Window.setNavigationBarColor`, `LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES` в обфусцированных классах `be.P`, `yd.P`, `zd.P`, `v.n`. В исходниках приложения прямых вызовов нет. Встроенный mapping предыдущего AAB `DadwayVPN-8.6.3-vc864.aab` подтверждает соответствие: `yd` — `androidx.activity.EdgeToEdgeApi23`, `zd` — `androidx.activity.EdgeToEdgeApi26`, `be` — `androidx.activity.EdgeToEdgeApi29`, `v` — `androidx.core.view.accessibility.AccessibilityNodeInfoCompat$$ExternalSyntheticApiModelOutline1` (синтетический класс R8 с вызовом через `WindowManager.LayoutParams` в методе `n`). Обновлены стабильные Activity, AppCompat и Core, CI запрещает возвращение этих параметров в исходники и сохраняет AAB mapping отдельно от последующей APK-сборки. Совместимые библиотеки могут содержать вызовы для старых Android; исчезновение предупреждения требуется подтвердить после загрузки нового AAB в Console.
 3. Picture-in-Picture: рекомендация касается видеоплеера. Dadway VPN не воспроизводит видео; PiP не добавлен. Подключение отображается в foreground-уведомлении.
 
 ## Проверки сборки
@@ -29,4 +29,3 @@ CI запускает unit-тесты, Android Lint, R8 и resource shrinking, �
 - [AndroidX Activity: повторная настройка edge-to-edge при изменении конфигурации](https://developer.android.com/jetpack/androidx/releases/activity)
 - [AndroidX AppCompat](https://developer.android.com/jetpack/androidx/releases/appcompat)
 - [AndroidX Core](https://developer.android.com/jetpack/androidx/releases/core)
-
