@@ -20,9 +20,6 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import java.util.Locale
@@ -123,21 +120,7 @@ class AppRoutingActivity : AppCompatActivity() {
     }
 
     private fun applySystemInsets() {
-        val root = findViewById<View>(R.id.appRoutingRoot)
-        val start = root.paddingStart
-        val top = root.paddingTop
-        val end = root.paddingEnd
-        val bottom = root.paddingBottom
-        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
-            val safe = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or
-                    WindowInsetsCompat.Type.displayCutout() or
-                    WindowInsetsCompat.Type.ime()
-            )
-            view.updatePadding(start + safe.left, top + safe.top, end + safe.right, bottom + safe.bottom)
-            insets
-        }
-        ViewCompat.requestApplyInsets(root)
+        findViewById<View>(R.id.appRoutingRoot).applySafeDrawingInsets()
     }
 
     private inner class AppsAdapter(private val allApps: List<AppEntry>) : BaseAdapter() {

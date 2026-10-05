@@ -1,4 +1,4 @@
-# Dadway VPN v8.6.3
+# Dadway VPN v8.6.4
 
 Стабильная версия Android-клиента Dadway VPN на базе libXray.
 
@@ -29,13 +29,13 @@
 ## Версия
 
 - `applicationId`: ru.dadway.dadwayvpn
-- `versionCode`: 864
-- `versionName`: 8.6.3
+- `versionCode`: 865
+- `versionName`: 8.6.4
 - `targetSdk`: 36
 
 ## Сборка
 
-GitHub Actions собирает отдельные подписанные APK для `arm64-v8a` и `armeabi-v7a`, а также подписанный `DadwayVPN-8.6.3.aab` для Google Play. Сборочная цепочка использует AGP 9.0.1, Gradle 9.1.0, встроенную поддержку Kotlin и полную R8-оптимизацию с перепаковкой классов.
+GitHub Actions собирает отдельные подписанные APK для `arm64-v8a` и `armeabi-v7a`, а также подписанный `DadwayVPN-8.6.4.aab` для Google Play. Сборочная цепочка использует AGP 9.0.1, Gradle 9.1.0, встроенную поддержку Kotlin и полную R8-оптимизацию с перепаковкой классов.
 
 Инструкция по загрузке находится в `UPLOAD_TO_GITHUB.md`.
 

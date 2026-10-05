@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
@@ -42,7 +42,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if ($stagedFiles.Count -gt 0) {
-    Invoke-Git -Arguments @("commit", "-m", "Release Dadway VPN 8.6.3")
+    Invoke-Git -Arguments @("commit", "-m", "Release Dadway VPN 8.6.4")
 }
 else {
     Write-Host "No file changes to commit." -ForegroundColor Yellow

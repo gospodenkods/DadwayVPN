@@ -15,9 +15,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import com.google.android.material.button.MaterialButton
 
 class SettingsActivity : AppCompatActivity() {
@@ -155,25 +152,6 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun applySystemInsets() {
-        val root = findViewById<View>(R.id.settingsRoot)
-        val initialStart = root.paddingStart
-        val initialTop = root.paddingTop
-        val initialEnd = root.paddingEnd
-        val initialBottom = root.paddingBottom
-        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
-            val safe = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or
-                    WindowInsetsCompat.Type.displayCutout() or
-                    WindowInsetsCompat.Type.ime()
-            )
-            view.updatePadding(
-                left = initialStart + safe.left,
-                top = initialTop + safe.top,
-                right = initialEnd + safe.right,
-                bottom = initialBottom + safe.bottom,
-            )
-            insets
-        }
-        ViewCompat.requestApplyInsets(root)
+        findViewById<View>(R.id.settingsRoot).applySafeDrawingInsets()
     }
 }

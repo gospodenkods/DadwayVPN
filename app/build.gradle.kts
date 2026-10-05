@@ -22,8 +22,8 @@ android {
         applicationId = "ru.dadway.dadwayvpn"
         minSdk = 23
         targetSdk = 36
-        versionCode = 864
-        versionName = "8.6.3"
+        versionCode = 865
+        versionName = "8.6.4"
         if (!buildAbiApks) {
             ndk {
                 abiFilters += setOf("arm64-v8a", "armeabi-v7a")
@@ -80,9 +80,9 @@ android {
 
 dependencies {
     implementation(files("libs/libXray.aar"))
-    implementation("androidx.core:core-ktx:1.17.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.activity:activity-ktx:1.10.0")
+    implementation("androidx.core:core-ktx:1.18.0")
+    implementation("androidx.appcompat:appcompat:1.8.0")
+    implementation("androidx.activity:activity-ktx:1.13.0")
     implementation("com.google.android.material:material:1.14.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     testImplementation("junit:junit:4.13.2")
