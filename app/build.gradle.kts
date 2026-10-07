@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "ru.dadway.dadwayvpn"
-        minSdk = 23
+        minSdk = 24
         targetSdk = 36
         versionCode = 867
         versionName = "8.6.7"

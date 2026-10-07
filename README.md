@@ -33,6 +33,7 @@
 - `versionCode`: 867
 - `versionName`: 8.6.7
 - `targetSdk`: 36
+- `minSdk`: 24 (Android 7.0 и новее; совместимо с автоматической защитой Google Play)
 
 ## Сборка
 

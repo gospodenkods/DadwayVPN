@@ -107,6 +107,7 @@ jobs:
           grep -q 'android:versionCode="867"' aab-manifest.xml
           grep -q 'android:versionName="8.6.7"' aab-manifest.xml
           grep -q 'android:targetSdkVersion="36"' aab-manifest.xml
+          grep -q 'android:minSdkVersion="24"' aab-manifest.xml
           unzip -l output/aab/DadwayVPN-8.6.7.aab | tee aab-contents.txt
           grep -q 'base/manifest/AndroidManifest.xml' aab-contents.txt
           grep -q 'base/lib/arm64-v8a/' aab-contents.txt
