@@ -47,3 +47,5 @@ GitHub Actions собирает отдельные подписанные APK д
 ## Интерфейс
 
 Главный экран поддерживает светлую, тёмную и системную тему. Графические исходники находятся в папке `design-assets`.
+
+Материалы Google Play и инструкция: [`design-assets/google-play/8.6.7/README_RU.txt`](design-assets/google-play/8.6.7/README_RU.txt). Скрипт повторной конвертации: [`tools/prepare-play-assets.ps1`](tools/prepare-play-assets.ps1). Телефонные изображения используют реальные исходники 8.5.7; для страницы текущей версии нужны актуальные скриншоты.

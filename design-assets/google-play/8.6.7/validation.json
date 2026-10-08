@@ -1,0 +1,56 @@
+[
+  {
+    "File": "phone/phone-01-720x1280.png",
+    "Width": 720,
+    "Height": 1280,
+    "Format": "PNG RGB 24-bit, no alpha",
+    "Bytes": 376422,
+    "SHA256": "f339b64b6f7012371e3b8fbcd906e276397a9b62960ffb47d8c2c28f14d12276",
+    "Status": "Technical conversion of real 8.5.7 screenshot; refresh for 8.6.7 recommended"
+  },
+  {
+    "File": "phone/phone-02-720x1280.png",
+    "Width": 720,
+    "Height": 1280,
+    "Format": "PNG RGB 24-bit, no alpha",
+    "Bytes": 489381,
+    "SHA256": "5a052ab946e9af087ca5109ed92148346856deb5f6c3de222d1af63b8722aa82",
+    "Status": "Technical conversion of real 8.5.7 screenshot; refresh for 8.6.7 recommended"
+  },
+  {
+    "File": "phone/phone-03-720x1280.png",
+    "Width": 720,
+    "Height": 1280,
+    "Format": "PNG RGB 24-bit, no alpha",
+    "Bytes": 337401,
+    "SHA256": "c1c7d0f288932d86b1d99280a484faeb26f84ee43b89bbd552bdfbc18754349e",
+    "Status": "Technical conversion of real 8.5.7 screenshot; refresh for 8.6.7 recommended"
+  },
+  {
+    "File": "common/feature-1024x500.png",
+    "Width": 1024,
+    "Height": 500,
+    "Format": "PNG RGB 24-bit, no alpha",
+    "Bytes": 920832,
+    "SHA256": "fa3ab601c788e184a679cafc26334fa42f51d05fd654cd772fe2569a66eadae1",
+    "Status": "Brand asset"
+  },
+  {
+    "File": "common/icon-512x512.png",
+    "Width": 512,
+    "Height": 512,
+    "Format": "PNG RGB 24-bit, no alpha",
+    "Bytes": 357328,
+    "SHA256": "7175f78f922804946cd5731807616e097d5ae58b2b1076269be12656e83a1876",
+    "Status": "Brand asset"
+  },
+  {
+    "File": "tv/tv-banner-1280x720.png",
+    "Width": 1280,
+    "Height": 720,
+    "Format": "PNG RGB 24-bit, no alpha",
+    "Bytes": 1371773,
+    "SHA256": "ddab011c56406783e3553423e386e9e1c96a3cd5e0bfb7c4fdbe939c97f043f1",
+    "Status": "Brand asset"
+  }
+]
